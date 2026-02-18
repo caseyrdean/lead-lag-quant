@@ -133,5 +133,53 @@ def init_schema(conn: sqlite3.Connection) -> None:
             ON returns_policy_a(ticker, trading_day);
         CREATE INDEX IF NOT EXISTS idx_splits_ticker_date
             ON splits(ticker, execution_date);
+
+        CREATE TABLE IF NOT EXISTS features_cross_correlation (
+            ticker_a        TEXT NOT NULL,
+            ticker_b        TEXT NOT NULL,
+            trading_day     TEXT NOT NULL,
+            lag             INTEGER NOT NULL,
+            correlation     REAL,
+            p_value         REAL,
+            is_significant  INTEGER,
+            PRIMARY KEY (ticker_a, ticker_b, trading_day, lag)
+        );
+
+        CREATE TABLE IF NOT EXISTS features_relative_strength (
+            ticker_a        TEXT NOT NULL,
+            ticker_b        TEXT NOT NULL,
+            trading_day     TEXT NOT NULL,
+            rs_value        REAL,
+            PRIMARY KEY (ticker_a, ticker_b, trading_day)
+        );
+
+        CREATE TABLE IF NOT EXISTS features_volatility (
+            ticker          TEXT NOT NULL,
+            trading_day     TEXT NOT NULL,
+            volatility_20d  REAL,
+            PRIMARY KEY (ticker, trading_day)
+        );
+
+        CREATE TABLE IF NOT EXISTS features_zscore (
+            ticker          TEXT NOT NULL,
+            trading_day     TEXT NOT NULL,
+            zscore_return   REAL,
+            PRIMARY KEY (ticker, trading_day)
+        );
+
+        CREATE TABLE IF NOT EXISTS features_lagged_returns (
+            ticker          TEXT NOT NULL,
+            trading_day     TEXT NOT NULL,
+            lag             INTEGER NOT NULL,
+            return_value    REAL,
+            PRIMARY KEY (ticker, trading_day, lag)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_xcorr_date
+            ON features_cross_correlation(trading_day);
+        CREATE INDEX IF NOT EXISTS idx_xcorr_pair
+            ON features_cross_correlation(ticker_a, ticker_b);
+        CREATE INDEX IF NOT EXISTS idx_volatility_ticker
+            ON features_volatility(ticker);
     """)
     conn.commit()

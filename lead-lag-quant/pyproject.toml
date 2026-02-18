@@ -11,6 +11,10 @@ dependencies = [
     "pyrate-limiter",
     "gradio",
     "python-dotenv",
+    "scipy>=1.13",
+    "statsmodels>=0.14",
+    "pandas>=2.1",
+    "numpy>=1.26",
 ]
 
 [dependency-groups]
