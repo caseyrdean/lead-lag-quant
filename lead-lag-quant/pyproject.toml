@@ -10,6 +10,7 @@ dependencies = [
     "exchange-calendars",
     "pyrate-limiter",
     "gradio",
+    "python-dotenv",
 ]
 
 [dependency-groups]

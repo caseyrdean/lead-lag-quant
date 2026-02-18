@@ -1,4 +1,7 @@
 """Lead-Lag Quant application entry point."""
+from dotenv import load_dotenv
+load_dotenv()
+
 from utils.config import get_config
 from utils.logging import configure_logging, get_logger
 from ui.app import create_app
