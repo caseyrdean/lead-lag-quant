@@ -278,10 +278,10 @@ class TestStoreDividendsForTicker:
         div_json = json.dumps({
             "results": [
                 {
-                    "ex_date": "2023-03-15",
+                    "ex_dividend_date": "2023-03-15",
                     "cash_amount": 0.23,
                     "currency": "USD",
-                    "dividend_type": "CD",
+                    "distribution_type": "CD",
                     "pay_date": "2023-04-15",
                     "record_date": "2023-03-16",
                 }
@@ -313,10 +313,10 @@ class TestStoreDividendsForTicker:
         div_json = json.dumps({
             "results": [
                 {
-                    "ex_date": "2023-03-15",
+                    "ex_dividend_date": "2023-03-15",
                     "cash_amount": 5.00,  # large dividend to detect price contamination
                     "currency": "USD",
-                    "dividend_type": "CD",
+                    "distribution_type": "CD",
                     "pay_date": "2023-04-15",
                     "record_date": "2023-03-16",
                 }
@@ -368,10 +368,10 @@ class TestNormalizeTicker:
         div_json = json.dumps({
             "results": [
                 {
-                    "ex_date": "2024-03-15",
+                    "ex_dividend_date": "2024-03-15",
                     "cash_amount": 0.50,
                     "currency": "USD",
-                    "dividend_type": "CD",
+                    "distribution_type": "CD",
                     "pay_date": "2024-04-15",
                     "record_date": "2024-03-16",
                 }

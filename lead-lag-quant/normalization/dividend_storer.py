@@ -35,15 +35,16 @@ def store_dividends_for_ticker(conn: sqlite3.Connection, ticker: str) -> int:
         records = [
             (
                 ticker,
-                div["ex_date"],
+                div["ex_dividend_date"],
                 div.get("cash_amount"),
                 div.get("currency"),
-                div.get("dividend_type"),
+                div.get("distribution_type"),
                 div.get("pay_date"),
                 div.get("record_date"),
                 retrieved_at,
             )
             for div in dividends
+            if div.get("ex_dividend_date")
         ]
         conn.executemany(
             """
