@@ -63,11 +63,11 @@ Plans:
   2. Bonferroni-corrected significance testing rejects spurious correlations at the 0.0045 threshold across 11 lag offsets
   3. Relative Strength (leader minus follower cumulative return, rolling 10-session) is computed and stored for each pair
   4. Rolling volatility (20d), z-score standardized returns, and lagged returns (offsets +/-1 through +/-5) are computed and available in SQLite
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 03-01: SPY residualization and rolling cross-correlation module
-- [ ] 03-02: Relative strength, volatility, z-scores, and lagged returns
+- [ ] 03-01-PLAN.md -- Add scipy/statsmodels, extend SQLite schema with 5 feature tables, SPY residualization and rolling cross-correlation with Bonferroni (FEAT-01, FEAT-02, FEAT-03)
+- [ ] 03-02-PLAN.md -- Relative strength, volatility, z-scores, lagged returns, and pipeline orchestrator (FEAT-04, FEAT-05, FEAT-06, FEAT-07)
 
 ### Phase 4: Lead-Lag Engine, Regime & Signals
 **Goal**: Features are consumed to detect statistically stable lead-lag relationships, classify market regime, and generate full position specs that meet strict confidence thresholds
