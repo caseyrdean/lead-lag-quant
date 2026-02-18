@@ -48,11 +48,11 @@ Plans:
   3. Returns (1d, 5d, 10d, 20d, 60d) are computed exclusively from `adj_close` and stored in SQLite
   4. All timestamps are UTC datetimes with NYSE trading day assignment; no raw Unix milliseconds leak into normalized tables
   5. Split records include `fetched_at` timestamp enabling future point-in-time backtest isolation
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 02-01: Policy A split-adjustment engine and normalization pipeline
-- [ ] 02-02: Returns computation and timestamp normalization
+- [ ] 02-01-PLAN.md -- Schema extension (4 new tables), normalization module (split adjuster, bar normalizer, dividend storer, timestamp utils, orchestrator), tests
+- [ ] 02-02-PLAN.md -- Returns computation (multi-period pct_change from adj_close), Normalize tab in Gradio UI
 
 ### Phase 3: Feature Engineering
 **Goal**: Normalized return series are transformed into statistically rigorous features: residualized cross-correlations, relative strength, volatility, and standardized metrics
