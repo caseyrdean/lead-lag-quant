@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Any seeded equity pair produces a reproducible, auditable full position spec backed by statistically validated lead-lag relationships -- and a paper trading simulator to validate those signals against real prices before committing capital.
-**Current focus:** Phase 2 - Normalization & Returns
+**Current focus:** Phase 3 - Feature Engineering
 
 ## Current Position
 
-Phase: 2 of 6 (Normalization & Returns)
-Plan: 2 of 2 -- Phase 2 COMPLETE
+Phase: 3 of 6 (Feature Engineering)
+Plan: 1 of 3 -- Plan 1 COMPLETE
 Status: Ready
-Last activity: 2026-02-18 -- Completed 02-02-PLAN.md (Returns computation module + Normalize UI tab)
+Last activity: 2026-02-18 -- Completed 03-01-PLAN.md (Cross-correlation foundation: scipy/statsmodels, 5 feature tables, SPY residualization, Bonferroni xcorr)
 
-Progress: [######........] 29%
+Progress: [#######.......] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 19min
-- Total execution time: 1.58 hours
+- Total plans completed: 6
+- Average duration: 17min
+- Total execution time: 1.68 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [######........] 29%
 |-------|-------|-------|----------|
 | 01-data-ingestion-pipeline | 3 | 55min | 18min |
 | 02-normalization-returns | 2 | 40min | 20min |
+| 03-feature-engineering | 1 | 6min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (15min), 01-03 (35min), 02-01 (25min), 02-02 (15min)
+- Last 5 plans: 01-03 (35min), 02-01 (25min), 02-02 (15min), 03-01 (6min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -66,6 +67,10 @@ Recent decisions affecting current work:
 - [02-02]: fill_method=None passed to pct_change to satisfy pandas >= 2.1 deprecation
 - [02-02]: First N rows per period carry NULL return (insufficient history) -- stored as NULL, not zero
 - [02-02]: Normalize tab placed third in Gradio UI; run_normalization() runs normalize_all_pairs then compute_returns_all_pairs sequentially
+- [03-01]: statsmodels 0.14 RollingOLS: .resid not available; residuals computed manually as y - (alpha + beta*spy) from rolling params DataFrame
+- [03-01]: BONFERRONI_THRESHOLD = 0.05/11 as module-level constant -- 11 lag tests per window requires correction to avoid ~42% false positive rate
+- [03-01]: Manual Python loop for rolling cross-correlation -- pandas.rolling().apply() is 1D only, cannot slice two series simultaneously
+- [03-01]: Guard len(series) < window in residualize_against_spy to return all-NaN series rather than crash RollingOLS with IndexError
 
 ### Pending Todos
 
@@ -79,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 02-02-PLAN.md (Returns computation module + Normalize UI tab) -- Phase 2 complete
-Resume file: .planning/phases/02-normalization-returns/02-02-SUMMARY.md
+Stopped at: Completed 03-01-PLAN.md (Cross-correlation foundation: scipy/statsmodels deps, 5 feature tables, SPY residualization, Bonferroni xcorr with Bonferroni threshold)
+Resume file: .planning/phases/03-feature-engineering/03-01-SUMMARY.md
