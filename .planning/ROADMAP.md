@@ -31,12 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. SPY data is automatically fetched alongside any pair fetch without user intervention
   4. Re-running ingestion for the same date range produces no duplicate records in SQLite
   5. Polygon API calls handle pagination, rate limiting, and 429 retries transparently -- user sees completed fetch, not HTTP errors
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 01-01: Project scaffolding, SQLite schema, shared utilities (config, logging, date helpers)
-- [ ] 01-02: Polygon.io REST client (pagination, rate limiter, backoff) and ingestion module
-- [ ] 01-03: Gradio app shell with pair management panel (UI-06)
+- [ ] 01-01-PLAN.md -- Project scaffolding, SQLite schema, shared utilities (config, logging, date helpers)
+- [ ] 01-02-PLAN.md -- Polygon.io REST client (pagination, rate limiter, backoff) and ingestion module
+- [ ] 01-03-PLAN.md -- Gradio app shell with pair management panel (UI-06)
 
 ### Phase 2: Normalization & Returns
 **Goal**: Raw ingested data is transformed into split-adjusted bars and policy-tagged return series that all downstream computation can trust
