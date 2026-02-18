@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 2 of 6 (Normalization & Returns)
-Plan: 2 of next
+Plan: 2 of 2 -- Phase 2 COMPLETE
 Status: Ready
-Last activity: 2026-02-18 -- Completed 02-01-PLAN.md (Normalization module, Schema + Policy A pipeline)
+Last activity: 2026-02-18 -- Completed 02-02-PLAN.md (Returns computation module + Normalize UI tab)
 
-Progress: [#####.........] 21%
+Progress: [######........] 29%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 19min
-- Total execution time: 1.33 hours
+- Total execution time: 1.58 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-data-ingestion-pipeline | 3 | 55min | 18min |
-| 02-normalization-returns | 1 | 25min | 25min |
+| 02-normalization-returns | 2 | 40min | 20min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (15min), 01-03 (35min), 02-01 (25min)
-- Trend: baseline
+- Last 5 plans: 01-02 (15min), 01-03 (35min), 02-01 (25min), 02-02 (15min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -62,6 +62,10 @@ Recent decisions affecting current work:
 - [02-01]: XNYS calendar instantiated once as module-level singleton in timestamp_utils.py to avoid expensive repeated creation
 - [02-01]: fetched_at on splits rows copied from raw_api_responses.retrieved_at for point-in-time backtest isolation (NORM-05)
 - [02-01]: adjustment_policy_id column defaults to 'policy_a' on normalized_bars for future multi-policy extensibility
+- [02-02]: Returns computed strictly per-ticker -- single-ticker DataFrame fed to pct_change to prevent cross-ticker boundary bleed (NORM-04)
+- [02-02]: fill_method=None passed to pct_change to satisfy pandas >= 2.1 deprecation
+- [02-02]: First N rows per period carry NULL return (insufficient history) -- stored as NULL, not zero
+- [02-02]: Normalize tab placed third in Gradio UI; run_normalization() runs normalize_all_pairs then compute_returns_all_pairs sequentially
 
 ### Pending Todos
 
@@ -75,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 02-01-PLAN.md (Normalization module -- schema + Policy A pipeline)
-Resume file: .planning/phases/02-normalization-returns/02-01-SUMMARY.md
+Stopped at: Completed 02-02-PLAN.md (Returns computation module + Normalize UI tab) -- Phase 2 complete
+Resume file: .planning/phases/02-normalization-returns/02-02-SUMMARY.md
