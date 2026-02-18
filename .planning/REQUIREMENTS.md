@@ -1,7 +1,7 @@
 # Requirements: Lead-Lag Quant
 
 **Defined:** 2026-02-18
-**Core Value:** Any seeded equity pair produces a reproducible, auditable full position spec backed by statistically validated lead-lag relationships — and a paper trading simulator to validate those signals against real prices before committing capital.
+**Core Value:** Any seeded equity pair produces a reproducible, auditable full position spec backed by statistically validated lead-lag relationships -- and a paper trading simulator to validate those signals against real prices before committing capital.
 
 ---
 
@@ -112,7 +112,7 @@
 | Automated stop-loss execution | Flagged only; human makes the final exit decision |
 | Intraday 5-minute bars | Different Lambda architecture and signal characteristics; deferred to v2 |
 | Sentiment / options skew data | Separate data pipeline; v2+ after core price/volume lead-lag is validated |
-| All-pairs exhaustive discovery | O(n²) explosion + multiple testing nightmare; pairs are always user-seeded |
+| All-pairs exhaustive discovery | O(n^2) explosion + multiple testing nightmare; pairs are always user-seeded |
 | ML-based signals | Violates explainability requirement; insufficient training data at this scale |
 | Dynamic threshold auto-adjustment | Introduces hidden state; makes signals non-reproducible |
 | Web dashboard (non-Gradio) | API-first in v2; UI is a separate project |
@@ -121,25 +121,62 @@
 
 ## Traceability
 
-*Populated during roadmap creation.*
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INGEST-01 through INGEST-10 | — | Pending |
-| NORM-01 through NORM-06 | — | Pending |
-| FEAT-01 through FEAT-07 | — | Pending |
-| ENGINE-01 through ENGINE-04 | — | Pending |
-| REGIME-01 through REGIME-02 | — | Pending |
-| SIGNAL-01 through SIGNAL-02 | — | Pending |
-| TRADE-01 through TRADE-08 | — | Pending |
-| BACKTEST-01 through BACKTEST-03 | — | Pending |
-| UI-01 through UI-06 | — | Pending |
+| INGEST-01 | Phase 1 | Pending |
+| INGEST-02 | Phase 1 | Pending |
+| INGEST-03 | Phase 1 | Pending |
+| INGEST-04 | Phase 1 | Pending |
+| INGEST-05 | Phase 1 | Pending |
+| INGEST-06 | Phase 1 | Pending |
+| INGEST-07 | Phase 1 | Pending |
+| INGEST-08 | Phase 1 | Pending |
+| INGEST-09 | Phase 1 | Pending |
+| INGEST-10 | Phase 1 | Pending |
+| NORM-01 | Phase 2 | Pending |
+| NORM-02 | Phase 2 | Pending |
+| NORM-03 | Phase 2 | Pending |
+| NORM-04 | Phase 2 | Pending |
+| NORM-05 | Phase 2 | Pending |
+| NORM-06 | Phase 2 | Pending |
+| FEAT-01 | Phase 3 | Pending |
+| FEAT-02 | Phase 3 | Pending |
+| FEAT-03 | Phase 3 | Pending |
+| FEAT-04 | Phase 3 | Pending |
+| FEAT-05 | Phase 3 | Pending |
+| FEAT-06 | Phase 3 | Pending |
+| FEAT-07 | Phase 3 | Pending |
+| ENGINE-01 | Phase 4 | Pending |
+| ENGINE-02 | Phase 4 | Pending |
+| ENGINE-03 | Phase 4 | Pending |
+| ENGINE-04 | Phase 4 | Pending |
+| REGIME-01 | Phase 4 | Pending |
+| REGIME-02 | Phase 4 | Pending |
+| SIGNAL-01 | Phase 4 | Pending |
+| SIGNAL-02 | Phase 4 | Pending |
+| TRADE-01 | Phase 5 | Pending |
+| TRADE-02 | Phase 5 | Pending |
+| TRADE-03 | Phase 5 | Pending |
+| TRADE-04 | Phase 5 | Pending |
+| TRADE-05 | Phase 5 | Pending |
+| TRADE-06 | Phase 5 | Pending |
+| TRADE-07 | Phase 5 | Pending |
+| TRADE-08 | Phase 5 | Pending |
+| BACKTEST-01 | Phase 6 | Pending |
+| BACKTEST-02 | Phase 6 | Pending |
+| BACKTEST-03 | Phase 6 | Pending |
+| UI-01 | Phase 5 | Pending |
+| UI-02 | Phase 6 | Pending |
+| UI-03 | Phase 6 | Pending |
+| UI-04 | Phase 5 | Pending |
+| UI-05 | Phase 6 | Pending |
+| UI-06 | Phase 1 | Pending |
 
 **Coverage:**
-- v1 requirements: 46 total
-- Mapped to phases: 0
-- Unmapped: 46 ⚠️
+- v1 requirements: 48 total
+- Mapped to phases: 48
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after initial definition*
+*Last updated: 2026-02-18 after roadmap creation*
