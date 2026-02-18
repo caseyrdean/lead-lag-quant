@@ -5,32 +5,32 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Any seeded equity pair produces a reproducible, auditable full position spec backed by statistically validated lead-lag relationships -- and a paper trading simulator to validate those signals against real prices before committing capital.
-**Current focus:** Phase 1 - Data Ingestion Pipeline
+**Current focus:** Phase 2 - Normalization & Returns
 
 ## Current Position
 
-Phase: 1 of 6 (Data Ingestion Pipeline)
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-02-18 -- Completed 01-02-PLAN.md (Polygon client + ingestion orchestrator)
+Phase: 2 of 6 (Normalization & Returns)
+Plan: 1 of next phase
+Status: Ready
+Last activity: 2026-02-18 -- Completed 01-03-PLAN.md (Gradio app shell, Phase 1 DONE)
 
-Progress: [###...........] 10%
+Progress: [####..........] 17%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 10min
-- Total execution time: 0.33 hours
+- Total plans completed: 3
+- Average duration: 18min
+- Total execution time: 0.92 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-data-ingestion-pipeline | 2 | 20min | 10min |
+| 01-data-ingestion-pipeline | 3 | 55min | 18min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (15min)
+- Last 5 plans: 01-01 (5min), 01-02 (15min), 01-03 (35min)
 - Trend: baseline
 
 *Updated after each plan completion*
@@ -52,6 +52,10 @@ Recent decisions affecting current work:
 - [01-02]: SPY always included in ingest_pair via set deduplication {leader, follower, SPY} (INGEST-10)
 - [01-02]: Per-endpoint error isolation: failed endpoint logs status=failed but remaining endpoints continue
 - [01-02]: Deterministic params serialization via json.dumps(sort_keys=True) for idempotent row lookup
+- [01-03]: app.queue() called before returning Blocks instance -- required for gr.Progress to render during fetch
+- [01-03]: SQLite is single source of truth for pair state -- no gr.State() for persistence
+- [01-03]: load_dotenv() placed at very top of main.py before any imports that read env vars
+- [01-03]: python-dotenv added to pyproject.toml as runtime dependency (not dev-only)
 
 ### Pending Todos
 
@@ -65,5 +69,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 01-02-PLAN.md (Polygon client + ingestion orchestrator)
-Resume file: .planning/phases/01-data-ingestion-pipeline/01-02-SUMMARY.md
+Stopped at: Completed 01-03-PLAN.md (Gradio app shell) -- Phase 1 COMPLETE
+Resume file: .planning/phases/01-data-ingestion-pipeline/01-03-SUMMARY.md
