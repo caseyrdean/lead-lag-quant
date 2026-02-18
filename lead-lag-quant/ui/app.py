@@ -7,6 +7,8 @@ import gradio as gr
 
 from ingestion_massive.ingestion import ingest_pair
 from ingestion_massive.polygon_client import PolygonClient
+from normalization.normalizer import normalize_all_pairs
+from normalization.returns_calc import compute_returns_all_pairs
 from utils.config import AppConfig
 from utils.db import get_connection, init_schema
 
@@ -169,6 +171,55 @@ def create_app(config: AppConfig) -> gr.Blocks:
         return "\n".join(log_lines)
 
     # ------------------------------------------------------------------
+    # Tab 3 callbacks
+    # ------------------------------------------------------------------
+
+    def run_normalization(progress=gr.Progress()):
+        """Run normalization + returns computation for all active pairs.
+
+        Steps:
+        1. Check for active pairs in SQLite.
+        2. Run normalize_all_pairs (splits extraction, bar normalization, dividend storage).
+        3. Run compute_returns_all_pairs (multi-period returns).
+        4. Return human-readable log of counts.
+
+        Returns:
+            Log string describing normalization results per ticker.
+        """
+        pairs = conn.execute(
+            "SELECT leader, follower FROM ticker_pairs WHERE is_active = 1"
+        ).fetchall()
+
+        if not pairs:
+            return "No active pairs. Add pairs and fetch data first."
+
+        log_lines = ["Starting normalization pipeline...\n"]
+        progress(0.1, desc="Running normalization...")
+
+        try:
+            norm_results = normalize_all_pairs(conn)
+            progress(0.6, desc="Computing returns...")
+            returns_results = compute_returns_all_pairs(conn)
+            progress(1.0, desc="Complete")
+
+            log_lines.append("Normalization results:")
+            for ticker, counts in sorted(norm_results.items()):
+                log_lines.append(
+                    f"  {ticker}: splits={counts['splits']}, "
+                    f"bars={counts['bars']}, dividends={counts['dividends']}"
+                )
+
+            log_lines.append("\nReturns computation results:")
+            for ticker, count in sorted(returns_results.items()):
+                log_lines.append(f"  {ticker}: {count} return rows upserted")
+
+            log_lines.append("\nNormalization complete.")
+        except Exception as exc:
+            log_lines.append(f"\nError during normalization: {exc}")
+
+        return "\n".join(log_lines)
+
+    # ------------------------------------------------------------------
     # Layout
     # ------------------------------------------------------------------
 
@@ -226,6 +277,24 @@ def create_app(config: AppConfig) -> gr.Blocks:
                 fn=fetch_all_data,
                 inputs=[from_date_input, to_date_input],
                 outputs=[fetch_log],
+            )
+
+        with gr.Tab("Normalize"):
+            gr.Markdown("### Normalize All Active Pairs")
+            gr.Markdown(
+                "Applies Policy A split adjustment to raw OHLCV bars, stores dividends separately, "
+                "and computes 1d/5d/10d/20d/60d returns from adj_close. Idempotent -- safe to re-run."
+            )
+            normalize_btn = gr.Button("Normalize All Pairs", variant="primary")
+            normalize_log = gr.Textbox(
+                label="Normalization Log",
+                lines=15,
+                interactive=False,
+            )
+            normalize_btn.click(
+                fn=run_normalization,
+                inputs=[],
+                outputs=[normalize_log],
             )
 
         # Load pairs on startup
