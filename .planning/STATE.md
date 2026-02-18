@@ -10,27 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 2 of 6 (Normalization & Returns)
-Plan: 1 of next phase
+Plan: 2 of next
 Status: Ready
-Last activity: 2026-02-18 -- Completed 01-03-PLAN.md (Gradio app shell, Phase 1 DONE)
+Last activity: 2026-02-18 -- Completed 02-01-PLAN.md (Normalization module, Schema + Policy A pipeline)
 
-Progress: [####..........] 17%
+Progress: [#####.........] 21%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 18min
-- Total execution time: 0.92 hours
+- Total plans completed: 4
+- Average duration: 19min
+- Total execution time: 1.33 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-data-ingestion-pipeline | 3 | 55min | 18min |
+| 02-normalization-returns | 1 | 25min | 25min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (15min), 01-03 (35min)
+- Last 5 plans: 01-01 (5min), 01-02 (15min), 01-03 (35min), 02-01 (25min)
 - Trend: baseline
 
 *Updated after each plan completion*
@@ -56,6 +57,11 @@ Recent decisions affecting current work:
 - [01-03]: SQLite is single source of truth for pair state -- no gr.State() for persistence
 - [01-03]: load_dotenv() placed at very top of main.py before any imports that read env vars
 - [01-03]: python-dotenv added to pyproject.toml as runtime dependency (not dev-only)
+- [02-01]: Policy A is split-only: adj_price = raw_price * historical_adjustment_factor; dividends stored separately and never applied to prices
+- [02-01]: Polygon historical_adjustment_factor strategy: next split after bar_date provides cumulative backward factor; 1.0 if no splits exist after bar_date
+- [02-01]: XNYS calendar instantiated once as module-level singleton in timestamp_utils.py to avoid expensive repeated creation
+- [02-01]: fetched_at on splits rows copied from raw_api_responses.retrieved_at for point-in-time backtest isolation (NORM-05)
+- [02-01]: adjustment_policy_id column defaults to 'policy_a' on normalized_bars for future multi-policy extensibility
 
 ### Pending Todos
 
@@ -69,5 +75,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 01-03-PLAN.md (Gradio app shell) -- Phase 1 COMPLETE
-Resume file: .planning/phases/01-data-ingestion-pipeline/01-03-SUMMARY.md
+Stopped at: Completed 02-01-PLAN.md (Normalization module -- schema + Policy A pipeline)
+Resume file: .planning/phases/02-normalization-returns/02-01-SUMMARY.md
