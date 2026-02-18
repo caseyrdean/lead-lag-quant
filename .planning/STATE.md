@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 1 of 6 (Data Ingestion Pipeline)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-02-18 -- Roadmap created (6 phases, 48 requirements mapped)
+Plan: 1 of 3 in current phase
+Status: Executing
+Last activity: 2026-02-18 -- Completed 01-01-PLAN.md (project scaffold + utilities)
 
-Progress: [..............] 0%
+Progress: [##............] 5%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 5min
+- Total execution time: 0.08 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-data-ingestion-pipeline | 1 | 5min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 5 plans: 01-01 (5min)
+- Trend: baseline
 
 *Updated after each plan completion*
 
@@ -45,6 +45,9 @@ Recent decisions affecting current work:
 - [Roadmap]: v1 is a local Gradio demo -- no AWS Lambda, S3, DynamoDB, or Terraform. SQLite for all storage. Gradio for UI.
 - [Roadmap]: Module layout follows spec: /ingestion_massive, /normalization, /features, /leadlag_engine, /signals, /paper_trading, /backtest, /ui, /utils, /tests
 - [Roadmap]: UI panels distributed across phases (vertical slices) rather than bundled into a single UI phase
+- [01-01]: Used raw sqlite3 (no ORM) for full control over schema and ON CONFLICT clauses
+- [01-01]: Module-level NYSE calendar caching to avoid expensive re-creation
+- [01-01]: Explicit pythonpath in pytest config for reliable test module resolution
 
 ### Pending Todos
 
@@ -58,5 +61,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Roadmap created, ready for Phase 1 planning
-Resume file: None
+Stopped at: Completed 01-01-PLAN.md (project scaffold + shared utilities)
+Resume file: .planning/phases/01-data-ingestion-pipeline/01-01-SUMMARY.md
