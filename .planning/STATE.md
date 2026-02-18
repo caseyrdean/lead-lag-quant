@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 3 of 6 (Feature Engineering)
-Plan: 1 of 3 -- Plan 1 COMPLETE
+Plan: 2 of 3 -- Plan 2 COMPLETE
 Status: Ready
-Last activity: 2026-02-18 -- Completed 03-01-PLAN.md (Cross-correlation foundation: scipy/statsmodels, 5 feature tables, SPY residualization, Bonferroni xcorr)
+Last activity: 2026-02-18 -- Completed 03-02-PLAN.md (Remaining features: RS, volatility, z-score, lagged returns, pipeline orchestrator)
 
-Progress: [#######.......] 33%
+Progress: [##########....] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 17min
-- Total execution time: 1.68 hours
+- Total plans completed: 7
+- Average duration: 16min
+- Total execution time: 1.81 hours
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [#######.......] 33%
 |-------|-------|-------|----------|
 | 01-data-ingestion-pipeline | 3 | 55min | 18min |
 | 02-normalization-returns | 2 | 40min | 20min |
-| 03-feature-engineering | 1 | 6min | 6min |
+| 03-feature-engineering | 2 | 14min | 7min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (35min), 02-01 (25min), 02-02 (15min), 03-01 (6min)
+- Last 5 plans: 02-01 (25min), 02-02 (15min), 03-01 (6min), 03-02 (8min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -71,6 +71,9 @@ Recent decisions affecting current work:
 - [03-01]: BONFERRONI_THRESHOLD = 0.05/11 as module-level constant -- 11 lag tests per window requires correction to avoid ~42% false positive rate
 - [03-01]: Manual Python loop for rolling cross-correlation -- pandas.rolling().apply() is 1D only, cannot slice two series simultaneously
 - [03-01]: Guard len(series) < window in residualize_against_spy to return all-NaN series rather than crash RollingOLS with IndexError
+- [03-02]: Lagged returns use series.shift(lag): positive lag=backward look (first N NaN), negative lag=forward look (last N NaN) -- plan docstring had inverted description but test expectations were authoritative
+- [03-02]: Pipeline separates pair-level features (xcorr, RS) from per-ticker features (volatility, zscore, lagged_returns) for clean orchestration and independent reuse
+- [03-02]: compute_features_all_pairs always includes SPY in per-ticker computation (hardcoded into tickers set)
 
 ### Pending Todos
 
@@ -84,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 03-01-PLAN.md (Cross-correlation foundation: scipy/statsmodels deps, 5 feature tables, SPY residualization, Bonferroni xcorr with Bonferroni threshold)
-Resume file: .planning/phases/03-feature-engineering/03-01-SUMMARY.md
+Stopped at: Completed 03-02-PLAN.md (Remaining features: RS, volatility, z-score, lagged returns, pipeline orchestrator, 74 tests passing)
+Resume file: .planning/phases/03-feature-engineering/03-02-SUMMARY.md
