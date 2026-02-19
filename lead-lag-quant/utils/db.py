@@ -3,6 +3,8 @@
 import sqlite3
 from pathlib import Path
 
+from leadlag_engine.db import init_engine_schema
+
 
 def get_connection(db_path: str | Path) -> sqlite3.Connection:
     """Create a SQLite connection with WAL mode for better concurrency.
@@ -183,3 +185,4 @@ def init_schema(conn: sqlite3.Connection) -> None:
             ON features_volatility(ticker);
     """)
     conn.commit()
+    init_engine_schema(conn)
