@@ -9,8 +9,9 @@ import sqlite3
 import gradio as gr
 import pandas as pd
 
-from paper_trading.engine import auto_execute_signals, get_open_positions_display
-from paper_trading.db import get_unprocessed_signals
+from features.pipeline import compute_features_all_pairs
+from leadlag_engine.pipeline import run_engine_for_all_pairs
+from paper_trading.engine import auto_execute_signals
 from utils.config import AppConfig
 from utils.logging import get_logger
 
@@ -92,8 +93,8 @@ def _get_active_signals_dataframe(conn: sqlite3.Connection) -> pd.DataFrame:
 
         return pd.DataFrame(data, columns=SIGNAL_COLUMNS)
 
-    except Exception:
-        log.exception("get_active_signals_failed")
+    except Exception as exc:
+        log.error("get_active_signals_failed", error=str(exc)[:200])
         return pd.DataFrame(columns=SIGNAL_COLUMNS)
 
 
@@ -111,35 +112,57 @@ def build_signal_dashboard_tab(conn: sqlite3.Connection, config: AppConfig) -> N
         config: AppConfig with polygon_api_key.
     """
 
+    def run_analysis_callback() -> tuple[str, pd.DataFrame]:
+        """Run Phase 3 + Phase 4 pipeline to generate signals.
+
+        Returns:
+            Tuple of (log string, refreshed signals table).
+        """
+        try:
+            log_lines = ["Running feature engineering..."]
+            feat_results = compute_features_all_pairs(conn)
+            pairs_done = len(feat_results.get("pairs", {}))
+            tickers_done = len(feat_results.get("tickers", {}))
+            log_lines.append(f"  Features computed: {pairs_done} pair(s), {tickers_done} ticker(s)")
+
+            log_lines.append("Running lead-lag engine...")
+            signals = run_engine_for_all_pairs(conn)
+            log_lines.append(f"  Signals generated: {len(signals)}")
+            if signals:
+                for s in signals:
+                    log_lines.append(
+                        f"    {s.get('ticker_a')} -> {s.get('ticker_b')}: "
+                        f"{s.get('direction')} | stability={s.get('stability_score', 0):.1f} | "
+                        f"corr={s.get('correlation_strength', 0):.3f}"
+                    )
+            log_lines.append("Analysis complete.")
+            return "\n".join(log_lines), _get_active_signals_dataframe(conn)
+        except Exception as exc:
+            log.error("run_analysis_failed", error=str(exc)[:200])
+            return f"Error running analysis: {exc}", _get_active_signals_dataframe(conn)
+
     def refresh_signals_callback() -> pd.DataFrame:
         """Reload the signals table."""
         return _get_active_signals_dataframe(conn)
 
-    def execute_signals_callback(
-        auto_execute_enabled: bool,
-    ) -> tuple[str, pd.DataFrame]:
-        """Execute unprocessed signals if auto-execute is enabled.
+    def execute_signals_callback() -> tuple[str, pd.DataFrame]:
+        """Execute all unprocessed signals into paper positions.
 
         Returns:
             Tuple of (status message, refreshed signals table).
         """
-        if not auto_execute_enabled:
-            return (
-                "Auto-execute is OFF. Enable the toggle first.",
-                _get_active_signals_dataframe(conn),
-            )
-
         try:
             results = auto_execute_signals(conn, config.polygon_api_key)
-            status = f"Executed {len(results)} signal(s)."
-            if results:
+            if not results:
+                status = "No unprocessed signals to execute. Run Analysis first, or signals may already be executed."
+            else:
                 tickers = ", ".join(r["ticker"] for r in results)
-                status += f" Tickers: {tickers}"
+                status = f"Executed {len(results)} signal(s). Tickers: {tickers}"
         except ValueError as exc:
             status = f"Error: {exc}"
-        except Exception:
-            log.exception("execute_signals_failed")
-            status = "Error executing signals. Check logs for details."
+        except Exception as exc:
+            log.error("execute_signals_failed", error=str(exc)[:200])
+            status = f"Error executing signals: {exc}"
 
         return status, _get_active_signals_dataframe(conn)
 
@@ -147,11 +170,16 @@ def build_signal_dashboard_tab(conn: sqlite3.Connection, config: AppConfig) -> N
         gr.Markdown("## Signal Dashboard")
 
         with gr.Row():
-            auto_execute_toggle = gr.Checkbox(
-                label="Auto-Execute New Signals",
-                value=False,
-                info="When enabled, qualifying signals auto-open paper positions",
-            )
+            run_analysis_btn = gr.Button("Run Analysis", variant="primary")
+            execute_btn = gr.Button("Execute New Signals", variant="secondary")
+            refresh_signals_btn = gr.Button("Refresh")
+
+        analysis_log = gr.Textbox(
+            label="Analysis Log",
+            value="",
+            lines=6,
+            interactive=False,
+        )
 
         signals_table = gr.Dataframe(
             value=refresh_signals_callback,
@@ -160,16 +188,15 @@ def build_signal_dashboard_tab(conn: sqlite3.Connection, config: AppConfig) -> N
             label="Active Signals (last 7 days)",
         )
 
-        with gr.Row():
-            execute_btn = gr.Button("Execute New Signals", variant="primary")
-            refresh_signals_btn = gr.Button("Refresh")
-
-        status_msg = gr.Textbox(label="Status", interactive=False)
+        status_msg = gr.Textbox(label="Status", value="", interactive=False)
 
         # Event wiring
+        run_analysis_btn.click(
+            fn=run_analysis_callback,
+            outputs=[analysis_log, signals_table],
+        )
         execute_btn.click(
             fn=execute_signals_callback,
-            inputs=[auto_execute_toggle],
             outputs=[status_msg, signals_table],
         )
         refresh_signals_btn.click(
