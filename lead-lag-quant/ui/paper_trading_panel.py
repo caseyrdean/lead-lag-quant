@@ -48,6 +48,18 @@ HISTORY_COLUMNS = [
 ]
 
 
+def _get_last_known_price(conn: sqlite3.Connection, ticker: str) -> float | None:
+    """Fall back to last adj_close from bars_normalized when snapshot API unavailable."""
+    try:
+        row = conn.execute(
+            "SELECT adj_close FROM bars_normalized WHERE ticker = ? ORDER BY date DESC LIMIT 1",
+            (ticker,),
+        ).fetchone()
+        return float(row["adj_close"]) if row else None
+    except Exception:
+        return None
+
+
 def _get_positions_dataframe(conn: sqlite3.Connection) -> pd.DataFrame:
     """Convert open positions to a display DataFrame.
 
@@ -76,8 +88,8 @@ def _get_positions_dataframe(conn: sqlite3.Connection) -> pd.DataFrame:
 
         return pd.DataFrame(data, columns=POSITION_COLUMNS)
 
-    except Exception:
-        log.exception("get_positions_dataframe_failed")
+    except Exception as exc:
+        log.error("get_positions_dataframe_failed", error=str(exc)[:200])
         return pd.DataFrame(columns=POSITION_COLUMNS)
 
 
@@ -107,8 +119,8 @@ def _get_history_dataframe(conn: sqlite3.Connection) -> pd.DataFrame:
 
         return pd.DataFrame(data, columns=HISTORY_COLUMNS)
 
-    except Exception:
-        log.exception("get_history_dataframe_failed")
+    except Exception as exc:
+        log.error("get_history_dataframe_failed", error=str(exc)[:200])
         return pd.DataFrame(columns=HISTORY_COLUMNS)
 
 
@@ -125,8 +137,8 @@ def _get_summary_values(conn: sqlite3.Connection) -> tuple[float, float, float]:
             summary.get("total_pnl", 0.0),
             summary.get("win_rate", 0.0),
         )
-    except Exception:
-        log.exception("get_summary_values_failed")
+    except Exception as exc:
+        log.error("get_summary_values_failed", error=str(exc)[:200])
         return (0.0, 0.0, 0.0)
 
 
@@ -162,7 +174,7 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
             cash, pnl, wr = _get_summary_values(conn)
             return f"Starting capital set to ${amount:,.2f}", cash, pnl, wr
         except Exception as exc:
-            log.exception("set_capital_failed")
+            log.error("set_capital_failed", error=str(exc)[:200])
             return f"Error: {exc}", 0.0, 0.0, 0.0
 
     def buy_callback(
@@ -193,11 +205,15 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
                     _get_history_dataframe(conn),
                 )
 
-            # Fetch current price
+            # Fetch current price; fall back to last known close from SQLite
             price = fetch_snapshot_price(ticker, config.polygon_api_key)
+            price_note = ""
+            if price is None:
+                price = _get_last_known_price(conn, ticker)
+                price_note = " (using last known close)"
             if price is None:
                 return (
-                    f"Error: Could not fetch price for {ticker}. Check ticker or API key.",
+                    f"Error: Could not fetch price for {ticker}. Ingest data for this ticker first.",
                     _get_positions_dataframe(conn),
                     *_get_summary_values(conn),
                     _get_history_dataframe(conn),
@@ -215,7 +231,7 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
                 executed_at=now_utc,
             )
 
-            status = f"Bought {shares_int} shares of {ticker} at ${price:.2f}"
+            status = f"Bought {shares_int} shares of {ticker} at ${price:.2f}{price_note}"
             return (
                 status,
                 _get_positions_dataframe(conn),
@@ -224,7 +240,7 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
             )
 
         except Exception as exc:
-            log.exception("buy_callback_failed")
+            log.error("buy_callback_failed", error=str(exc)[:200])
             return (
                 f"Error: {exc}",
                 _get_positions_dataframe(conn),
@@ -260,11 +276,15 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
                     _get_history_dataframe(conn),
                 )
 
-            # Fetch current price
+            # Fetch current price; fall back to last known close from SQLite
             price = fetch_snapshot_price(ticker, config.polygon_api_key)
+            price_note = ""
+            if price is None:
+                price = _get_last_known_price(conn, ticker)
+                price_note = " (using last known close)"
             if price is None:
                 return (
-                    f"Error: Could not fetch price for {ticker}. Check ticker or API key.",
+                    f"Error: Could not fetch price for {ticker}. Ingest data for this ticker first.",
                     _get_positions_dataframe(conn),
                     *_get_summary_values(conn),
                     _get_history_dataframe(conn),
@@ -281,7 +301,7 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
                 notes="manual",
             )
 
-            status = f"Sold {shares_int} shares of {ticker} at ${price:.2f}. Realized P&L: ${realized_pnl:.2f}"
+            status = f"Sold {shares_int} shares of {ticker} at ${price:.2f}{price_note}. Realized P&L: ${realized_pnl:.2f}"
             return (
                 status,
                 _get_positions_dataframe(conn),
@@ -297,7 +317,7 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
                 _get_history_dataframe(conn),
             )
         except Exception as exc:
-            log.exception("sell_callback_failed")
+            log.error("sell_callback_failed", error=str(exc)[:200])
             return (
                 f"Error: {exc}",
                 _get_positions_dataframe(conn),
@@ -312,8 +332,8 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
         """
         try:
             poll_and_update_prices(conn, config.polygon_api_key)
-        except Exception:
-            log.exception("refresh_prices_callback_failed")
+        except Exception as exc:
+            log.error("refresh_prices_callback_failed", error=str(exc)[:200])
         return _get_positions_dataframe(conn)
 
     def load_positions() -> pd.DataFrame:
@@ -347,16 +367,19 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
         with gr.Row():
             cash_display = gr.Number(
                 label="Cash Balance",
+                value=0.0,
                 interactive=False,
                 precision=2,
             )
             pnl_display = gr.Number(
                 label="Total P&L",
+                value=0.0,
                 interactive=False,
                 precision=2,
             )
             winrate_display = gr.Number(
                 label="Win Rate (%)",
+                value=0.0,
                 interactive=False,
                 precision=1,
             )

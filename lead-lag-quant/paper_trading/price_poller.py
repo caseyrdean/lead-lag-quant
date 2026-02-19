@@ -43,8 +43,8 @@ def is_market_open() -> bool:
         if schedule.empty:
             return False  # Today is a holiday or weekend
         return bool(nyse.open_at_time(schedule, now_et))
-    except Exception:
-        log.exception("market_hours_check_failed")
+    except Exception as exc:
+        log.error("market_hours_check_failed", error=str(exc)[:200])
         return False
 
 
@@ -74,8 +74,8 @@ def fetch_snapshot_price(ticker: str, api_key: str) -> float | None:
         if price is not None:
             return float(price)
         return None
-    except Exception:
-        log.exception("fetch_snapshot_price_failed", ticker=ticker)
+    except Exception as exc:
+        log.error("fetch_snapshot_price_failed", ticker=ticker, error=str(exc)[:200])
         return None
 
 
