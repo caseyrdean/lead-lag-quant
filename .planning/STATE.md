@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Any seeded equity pair produces a reproducible, auditable full position spec backed by statistically validated lead-lag relationships -- and a paper trading simulator to validate those signals against real prices before committing capital.
-**Current focus:** Phase 5 - Paper Trading Simulation
+**Current focus:** Phase 6 - Backtesting and Analysis
 
 ## Current Position
 
-Phase: 5 of 6 (Paper Trading Simulation)
-Plan: 1 of 2 -- Plan 05-01 complete
-Status: Executing
-Last activity: 2026-02-19 -- Completed Plan 05-01 (paper_trading engine, price poller, 10 new tests, 147 total passing)
+Phase: 6 of 6 (Backtesting and Analysis)
+Plan: 0 of ? -- Phase 5 complete
+Status: Ready
+Last activity: 2026-02-19 -- Completed Plan 05-02 (Signal Dashboard + Paper Trading UI, 5 tabs total, user-verified APPROVED)
 
-Progress: [################] 75%
+Progress: [####################] 90%
 
 ## Performance Metrics
 
@@ -32,10 +32,10 @@ Progress: [################] 75%
 | 03-feature-engineering | 2 | 14min | 7min |
 | 04-lead-lag-engine-regime-signals | 2 | 40min | 20min |
 
-| 05-paper-trading-simulation | 1 | 8min | 8min |
+| 05-paper-trading-simulation | 2 | 33min | 16min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (8min), 04-01 (18min), 04-02 (22min), 05-01 (8min)
+- Last 5 plans: 04-01 (18min), 04-02 (22min), 05-01 (8min), 05-02 (25min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -89,6 +89,10 @@ Recent decisions affecting current work:
 - [05-01]: Lazy-init NYSE calendar singleton to avoid import-time pandas_market_calendars overhead
 - [05-01]: Partial unique index idx_trades_signal_buy prevents duplicate auto-execution at DB level
 - [05-01]: init_paper_trading_schema wired into init_schema() following same pattern as init_engine_schema
+- [05-02]: build_signal_dashboard_tab and build_paper_trading_tab each create their own gr.Tab internally -- app.py only calls the builders, no wrapping needed
+- [05-02]: gr.Timer(900) wired to refresh_prices_callback which calls poll_and_update_prices then returns updated positions DataFrame for 15-min live refresh
+- [05-02]: Shared conn (check_same_thread=False + WAL mode) passed by closure into tab builders -- safe for single-user local app
+- [05-02]: execute_signals_callback guards on auto_execute_enabled toggle before calling auto_execute_signals to prevent accidental execution
 
 ### Pending Todos
 
@@ -102,5 +106,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 05-01-PLAN.md (paper_trading engine + tests). Ready for 05-02-PLAN.md (Gradio UI).
-Resume file: .planning/phases/05-paper-trading-simulation/05-01-SUMMARY.md
+Stopped at: Completed 05-02-PLAN.md (Signal Dashboard + Paper Trading UI, user-verified). Phase 5 complete. Ready for Phase 6 (Backtesting and Analysis).
+Resume file: .planning/phases/05-paper-trading-simulation/05-02-SUMMARY.md
