@@ -79,11 +79,11 @@ Plans:
   3. Signals are generated ONLY when stability_score > 70 AND correlation_strength > 0.65 -- no exceptions, no overrides
   4. Each qualifying signal produces a complete position spec: entry condition (date + direction), expected target (historical mean return during lag window), invalidation rule (leader reversal threshold), and sizing tier (full/half/quarter)
   5. Signals are stored immutably in SQLite with full explainability payload and directed flow map entry (A leads B)
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 04-01: Optimal lag detection and RSI-v2 stability score engine
-- [ ] 04-02: Regime classification, distribution detection, and signal generation
+- [ ] 04-01-PLAN.md -- leadlag_engine package: SQLite schema (4 new tables), optimal lag detector (ENGINE-01), RSI-v2 stability scorer (ENGINE-02) with tests
+- [ ] 04-02-PLAN.md -- Regime classifier (REGIME-01), distribution detector (REGIME-02), signal generator with hard gate (ENGINE-03, SIGNAL-01/02), pipeline orchestrator
 
 ### Phase 5: Paper Trading Simulation
 **Goal**: Users can validate signal quality with simulated trades -- auto-executed from signals or manually entered -- with live-ish price tracking and full P&L accounting
