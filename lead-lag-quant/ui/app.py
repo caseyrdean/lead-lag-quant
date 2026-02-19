@@ -1,4 +1,4 @@
-"""Gradio application for Lead-Lag Quant -- Pair Management and Data Ingestion panels."""
+"""Gradio application for Lead-Lag Quant -- 5 tabs: Pair Management, Data Ingestion, Normalize, Signal Dashboard, Paper Trading."""
 
 import sqlite3
 from datetime import date
@@ -9,6 +9,8 @@ from ingestion_massive.ingestion import ingest_pair
 from ingestion_massive.polygon_client import PolygonClient
 from normalization.normalizer import normalize_all_pairs
 from normalization.returns_calc import compute_returns_all_pairs
+from ui.signal_dashboard import build_signal_dashboard_tab
+from ui.paper_trading_panel import build_paper_trading_tab
 from utils.config import AppConfig
 from utils.db import get_connection, init_schema
 
@@ -296,6 +298,12 @@ def create_app(config: AppConfig) -> gr.Blocks:
                 inputs=[],
                 outputs=[normalize_log],
             )
+
+        # --- Phase 5: Signal Dashboard (UI-01) ---
+        build_signal_dashboard_tab(conn, config)
+
+        # --- Phase 5: Paper Trading (UI-04) ---
+        build_paper_trading_tab(conn, config)
 
         # Load pairs on startup
         app.load(fn=refresh_pairs, outputs=[pair_table])
