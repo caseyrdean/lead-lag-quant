@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 4 of 6 (Lead-Lag Engine, Regime & Signals)
-Plan: 1 of 4 -- Plan 1 COMPLETE
+Plan: 2 of 4 -- Plan 2 COMPLETE
 Status: Ready
-Last activity: 2026-02-18 -- Completed 04-01-PLAN.md (ENGINE-01 lag detector, ENGINE-02 RSI-v2 stability scorer, Phase 4 schema, 105 tests passing)
+Last activity: 2026-02-18 -- Completed 04-02-PLAN.md (REGIME-01/02 classifiers, SIGNAL-01/02 generator, pipeline orchestrator, 137 tests passing)
 
-Progress: [############..] 58%
+Progress: [#############.] 63%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 16min
-- Total execution time: 1.99 hours
+- Total execution time: 2.36 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [############..] 58%
 | 01-data-ingestion-pipeline | 3 | 55min | 18min |
 | 02-normalization-returns | 2 | 40min | 20min |
 | 03-feature-engineering | 2 | 14min | 7min |
-| 04-lead-lag-engine-regime-signals | 1 | 18min | 18min |
+| 04-lead-lag-engine-regime-signals | 2 | 40min | 20min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (15min), 03-01 (6min), 03-02 (8min), 04-01 (18min)
+- Last 5 plans: 03-01 (6min), 03-02 (8min), 04-01 (18min), 04-02 (22min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -78,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 04-lead-lag-engine-regime-signals]: RSI-v2 weights: lag_persistence=0.30, walk_forward_oos=0.25, rolling_confirmation=0.20, regime_stability=0.15, lag_drift=0.10 (resolves STATE.md blocker on undefined weights)
 - [Phase 04-lead-lag-engine-regime-signals]: detect_optimal_lag requires MIN_SIGNIFICANT_DAYS=30 per lag; selects by abs(median_corr) but returns signed correlation_strength
 - [Phase 04-lead-lag-engine-regime-signals]: init_engine_schema called from init_schema() so tmp_db fixture creates all Phase 4 tables automatically without conftest changes
+- [04-02]: passes_gate uses abs(correlation_strength) > 0.65 -- allows short signals (strong inverse correlations) to pass the strength gate; direction handled separately by sign
+- [04-02]: classify_regime() MUST be called before compute_stability_score() -- regime_stability_score() is an INPUT to RSI-v2 composite; ordering enforced in pipeline.py
+- [04-02]: adjustment_policy_id='policy_a' hardcoded in generate_signal() -- locked decision, not configurable
 
 ### Pending Todos
 
@@ -91,5 +94,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 04-01-PLAN.md (ENGINE-01 lag detector, ENGINE-02 RSI-v2 stability scorer, Phase 4 schema, 105 tests passing)
-Resume file: .planning/phases/04-lead-lag-engine-regime-signals/04-01-SUMMARY.md
+Stopped at: Completed 04-02-PLAN.md (REGIME-01/02 classifiers, SIGNAL-01/02 generator, pipeline orchestrator, 137 tests passing)
+Resume file: .planning/phases/04-lead-lag-engine-regime-signals/04-02-SUMMARY.md
