@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from leadlag_engine.db import init_engine_schema
+from paper_trading.db import init_paper_trading_schema
 
 
 def get_connection(db_path: str | Path) -> sqlite3.Connection:
@@ -186,3 +187,4 @@ def init_schema(conn: sqlite3.Connection) -> None:
     """)
     conn.commit()
     init_engine_schema(conn)
+    init_paper_trading_schema(conn)
