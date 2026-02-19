@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Any seeded equity pair produces a reproducible, auditable full position spec backed by statistically validated lead-lag relationships -- and a paper trading simulator to validate those signals against real prices before committing capital.
-**Current focus:** Phase 4 - Lead-Lag Engine, Regime & Signals
+**Current focus:** Phase 5 - Paper Trading Simulation
 
 ## Current Position
 
-Phase: 4 of 6 (Lead-Lag Engine, Regime & Signals)
-Plan: 2 of 4 -- Plan 2 COMPLETE
-Status: Ready
-Last activity: 2026-02-18 -- Completed 04-02-PLAN.md (REGIME-01/02 classifiers, SIGNAL-01/02 generator, pipeline orchestrator, 137 tests passing)
+Phase: 5 of 6 (Paper Trading Simulation)
+Plan: 0 of 2 -- Not started
+Status: Ready for planning
+Last activity: 2026-02-18 -- Completed Phase 4 (17/17 verified: ENGINE-01/02, REGIME-01/02, SIGNAL-01/02, pipeline orchestrator, 137 tests passing)
 
-Progress: [#############.] 63%
+Progress: [###############] 67%
 
 ## Performance Metrics
 
@@ -94,5 +94,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 04-02-PLAN.md (REGIME-01/02 classifiers, SIGNAL-01/02 generator, pipeline orchestrator, 137 tests passing)
-Resume file: .planning/phases/04-lead-lag-engine-regime-signals/04-02-SUMMARY.md
+Stopped at: Completed Phase 4 verification (17/17 passed). Ready to plan Phase 5.
+Resume file: .planning/phases/04-lead-lag-engine-regime-signals/04-VERIFICATION.md

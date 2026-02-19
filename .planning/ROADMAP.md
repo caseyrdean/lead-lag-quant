@@ -82,8 +82,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- leadlag_engine package: SQLite schema (4 new tables), optimal lag detector (ENGINE-01), RSI-v2 stability scorer (ENGINE-02) with tests
-- [ ] 04-02-PLAN.md -- Regime classifier (REGIME-01), distribution detector (REGIME-02), signal generator with hard gate (ENGINE-03, SIGNAL-01/02), pipeline orchestrator
+- [x] 04-01-PLAN.md -- leadlag_engine package: SQLite schema (4 new tables), optimal lag detector (ENGINE-01), RSI-v2 stability scorer (ENGINE-02) with tests
+- [x] 04-02-PLAN.md -- Regime classifier (REGIME-01), distribution detector (REGIME-02), signal generator with hard gate (ENGINE-03, SIGNAL-01/02), pipeline orchestrator
 
 ### Phase 5: Paper Trading Simulation
 **Goal**: Users can validate signal quality with simulated trades -- auto-executed from signals or manually entered -- with live-ish price tracking and full P&L accounting
@@ -126,6 +126,6 @@ Phases execute in numeric order: 1 --> 2 --> 3 --> 4 --> 5 --> 6
 | 1. Data Ingestion Pipeline | 3/3 | Complete | 2026-02-18 |
 | 2. Normalization & Returns | 2/2 | Complete | 2026-02-18 |
 | 3. Feature Engineering | 2/2 | Complete | 2026-02-18 |
-| 4. Lead-Lag Engine, Regime & Signals | 0/2 | Not started | - |
+| 4. Lead-Lag Engine, Regime & Signals | 2/2 | Complete | 2026-02-18 |
 | 5. Paper Trading Simulation | 0/2 | Not started | - |
 | 6. Backtest & Visualization | 0/2 | Not started | - |
