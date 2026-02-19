@@ -98,8 +98,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- Paper trading engine: SQLite schema (3 tables), trading engine (set capital, open/close positions, auto-execute), Polygon price poller with market hours guard, tests
-- [ ] 05-02-PLAN.md -- Signal Dashboard tab (UI-01) and Paper Trading tab (UI-04) integrated into existing Gradio app with gr.Timer price refresh
+- [x] 05-01-PLAN.md -- Paper trading engine: SQLite schema (3 tables), trading engine (set capital, open/close positions, auto-execute), Polygon price poller with market hours guard, tests
+- [x] 05-02-PLAN.md -- Signal Dashboard tab (UI-01) and Paper Trading tab (UI-04) integrated into existing Gradio app with gr.Timer price refresh
 
 ### Phase 6: Backtest & Visualization
 **Goal**: Users can validate historical signal quality through stored-data backtesting and explore lead-lag relationships, regime state, and backtest results through dedicated visualization panels
@@ -127,5 +127,5 @@ Phases execute in numeric order: 1 --> 2 --> 3 --> 4 --> 5 --> 6
 | 2. Normalization & Returns | 2/2 | Complete | 2026-02-18 |
 | 3. Feature Engineering | 2/2 | Complete | 2026-02-18 |
 | 4. Lead-Lag Engine, Regime & Signals | 2/2 | Complete | 2026-02-18 |
-| 5. Paper Trading Simulation | 0/2 | Not started | - |
+| 5. Paper Trading Simulation | 2/2 | Complete | 2026-02-19 |
 | 6. Backtest & Visualization | 0/2 | Not started | - |
