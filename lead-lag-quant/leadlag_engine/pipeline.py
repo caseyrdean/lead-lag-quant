@@ -30,17 +30,16 @@ from leadlag_engine.distribution import detect_distribution_events
 from signals.generator import generate_signal
 
 
-def run_engine_for_all_pairs(conn: sqlite3.Connection) -> list[dict]:
+def run_engine_for_all_pairs(conn: sqlite3.Connection) -> dict:
     """Run the full Phase 4 engine for all active ticker pairs.
 
     Reads active pairs from ticker_pairs table (is_active=1).
-    Returns list of signal dicts for qualifying signals (those that pass the gate).
-    Non-qualifying pairs are logged and skipped -- not treated as errors.
 
-    The returned signal dicts contain the full explainability payload:
-    optimal_lag, window_length, correlation_strength, stability_score,
-    regime_state, adjustment_policy_id, direction, expected_target,
-    invalidation_threshold, sizing_tier, flow_map_entry, generated_at.
+    Returns a dict:
+      signals       -- list of signal dicts for qualifying pairs (pass gate)
+      pair_summaries -- list of per-pair outcome dicts for UI display
+        Each summary has: ticker_a, ticker_b, outcome, stability_score,
+        correlation_strength, data_warning, reason.
     """
     log = get_logger("leadlag_engine.pipeline")
 
@@ -51,9 +50,10 @@ def run_engine_for_all_pairs(conn: sqlite3.Connection) -> list[dict]:
 
     if pairs_df.empty:
         log.info("pipeline_no_active_pairs")
-        return []
+        return {'signals': [], 'pair_summaries': []}
 
     signals_generated = []
+    pair_summaries = []
     signal_date = date.today().isoformat()
 
     for _, row in pairs_df.iterrows():
@@ -62,14 +62,26 @@ def run_engine_for_all_pairs(conn: sqlite3.Connection) -> list[dict]:
         # Step 1: Detect optimal lag (ENGINE-01)
         lag_result = detect_optimal_lag(conn, ticker_a, ticker_b)
         if lag_result is None:
-            log.info(
-                "pipeline_skip_no_lag",
-                ticker_a=ticker_a, ticker_b=ticker_b,
-            )
+            log.info("pipeline_skip_no_lag", ticker_a=ticker_a, ticker_b=ticker_b)
+            pair_summaries.append({
+                'ticker_a': ticker_a,
+                'ticker_b': ticker_b,
+                'outcome': 'skipped',
+                'reason': 'Insufficient significant correlation days (< 5)',
+                'stability_score': None,
+                'correlation_strength': None,
+                'data_warning': None,
+            })
             continue
 
         optimal_lag = lag_result['optimal_lag']
         correlation_strength = lag_result['correlation_strength']
+        limited_data = lag_result.get('limited_data', False)
+        significant_days = lag_result.get('significant_days', 30)
+        data_warning = (
+            f"Limited data: {significant_days} significant days (ideal: 30)"
+            if limited_data else None
+        )
 
         # Step 2: Classify regime FIRST -- required before stability score (REGIME-01)
         regime = classify_regime(conn, ticker_a, ticker_b)
@@ -82,7 +94,7 @@ def run_engine_for_all_pairs(conn: sqlite3.Connection) -> list[dict]:
             'lag_persistence':      lag_persistence_score(conn, ticker_a, ticker_b, optimal_lag),
             'walk_forward_oos':     walk_forward_oos_score(conn, ticker_a, ticker_b, optimal_lag),
             'rolling_confirmation': rolling_confirmation_score(conn, ticker_a, ticker_b, optimal_lag),
-            'regime_stability':     regime_stability_score(regime),  # uses regime from step 2
+            'regime_stability':     regime_stability_score(regime),
             'lag_drift':            lag_drift_score(conn, ticker_a, ticker_b),
         }
         stability_score = compute_stability_score(sub_scores)
@@ -93,6 +105,7 @@ def run_engine_for_all_pairs(conn: sqlite3.Connection) -> list[dict]:
             stability_score=round(stability_score, 2),
             correlation_strength=round(correlation_strength, 4),
             regime=regime,
+            limited_data=limited_data,
             sub_scores={k: round(v, 1) for k, v in sub_scores.items()},
         )
 
@@ -106,14 +119,39 @@ def run_engine_for_all_pairs(conn: sqlite3.Connection) -> list[dict]:
             stability_score=stability_score,
             regime_state=regime,
             signal_date=signal_date,
+            data_warning=data_warning,
         )
 
         if signal is not None:
             signals_generated.append(signal)
+            pair_summaries.append({
+                'ticker_a': ticker_a,
+                'ticker_b': ticker_b,
+                'outcome': 'signal',
+                'reason': f"stability={stability_score:.1f}, corr={correlation_strength:.3f}",
+                'stability_score': stability_score,
+                'correlation_strength': correlation_strength,
+                'data_warning': data_warning,
+            })
+        else:
+            from signals.generator import STABILITY_THRESHOLD, CORRELATION_THRESHOLD
+            if stability_score <= STABILITY_THRESHOLD:
+                reason = f"Stability too low ({stability_score:.1f}, need >{STABILITY_THRESHOLD})"
+            else:
+                reason = f"Correlation too weak ({abs(correlation_strength):.3f}, need >{CORRELATION_THRESHOLD})"
+            pair_summaries.append({
+                'ticker_a': ticker_a,
+                'ticker_b': ticker_b,
+                'outcome': 'gated',
+                'reason': reason,
+                'stability_score': stability_score,
+                'correlation_strength': correlation_strength,
+                'data_warning': data_warning,
+            })
 
     log.info(
         "pipeline_complete",
         n_pairs=len(pairs_df),
         n_signals=len(signals_generated),
     )
-    return signals_generated
+    return {'signals': signals_generated, 'pair_summaries': pair_summaries}

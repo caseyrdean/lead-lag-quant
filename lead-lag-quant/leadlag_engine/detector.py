@@ -14,8 +14,9 @@ import sqlite3
 import pandas as pd
 from utils.logging import get_logger
 
-_MIN_SIGNIFICANT_DAYS = 30  # Minimum days with is_significant=1 to qualify a lag
-_DEFAULT_LOOKBACK = 120      # Days of history to consider
+_MIN_SIGNIFICANT_DAYS = 30       # Ideal minimum days with is_significant=1
+_MIN_SIGNIFICANT_DAYS_FLOOR = 5  # Floor for limited-data fallback
+_DEFAULT_LOOKBACK = 120          # Days of history to consider
 
 
 def detect_optimal_lag(
@@ -74,28 +75,39 @@ def detect_optimal_lag(
         count='count',
     )
 
-    # Require at least _MIN_SIGNIFICANT_DAYS of significant observations per lag
+    # Require at least _MIN_SIGNIFICANT_DAYS of significant observations per lag.
+    # If unavailable, fall back to floor threshold and flag as limited_data.
     eligible = lag_stats[lag_stats['count'] >= _MIN_SIGNIFICANT_DAYS]
+    limited_data = False
+
     if eligible.empty:
-        log.info(
-            "detect_optimal_lag_insufficient_days",
-            ticker_a=ticker_a, ticker_b=ticker_b,
-            max_count=int(lag_stats['count'].max()),
-            min_required=_MIN_SIGNIFICANT_DAYS,
-        )
-        return None
+        eligible = lag_stats[lag_stats['count'] >= _MIN_SIGNIFICANT_DAYS_FLOOR]
+        if eligible.empty:
+            log.info(
+                "detect_optimal_lag_insufficient_days",
+                ticker_a=ticker_a, ticker_b=ticker_b,
+                max_count=int(lag_stats['count'].max()),
+                min_required=_MIN_SIGNIFICANT_DAYS_FLOOR,
+            )
+            return None
+        limited_data = True
 
     # Optimal lag: highest absolute median correlation among eligible lags
     optimal_lag = int(eligible['median_corr'].abs().idxmax())
     correlation_strength = float(eligible.loc[optimal_lag, 'median_corr'])
+    significant_days = int(eligible.loc[optimal_lag, 'count'])
 
     log.info(
         "detect_optimal_lag_found",
         ticker_a=ticker_a, ticker_b=ticker_b,
         optimal_lag=optimal_lag,
         correlation_strength=round(correlation_strength, 4),
+        significant_days=significant_days,
+        limited_data=limited_data,
     )
     return {
         'optimal_lag': optimal_lag,
         'correlation_strength': correlation_strength,
+        'limited_data': limited_data,
+        'significant_days': significant_days,
     }

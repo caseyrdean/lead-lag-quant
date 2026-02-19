@@ -171,6 +171,7 @@ def generate_signal(
     stability_score: float,
     regime_state: str,
     signal_date: str,
+    data_warning: str | None = None,
 ) -> dict | None:
     """Generate a full position spec if the signal passes the hard gate (ENGINE-03).
 
@@ -213,6 +214,7 @@ def generate_signal(
         'invalidation_threshold': invalidation_threshold,
         'sizing_tier': sizing_tier,
         'flow_map_entry': flow_map_entry,
+        'data_warning': data_warning,
         'generated_at': datetime.now(timezone.utc).isoformat(),
     }
 

@@ -28,6 +28,7 @@ SIGNAL_COLUMNS = [
     "Correlation",
     "Target",
     "Invalidation",
+    "Warning",
     "Generated At",
     "Executed",
 ]
@@ -56,6 +57,7 @@ def _get_active_signals_dataframe(conn: sqlite3.Connection) -> pd.DataFrame:
                 s.correlation_strength,
                 s.expected_target,
                 s.invalidation_threshold,
+                s.data_warning,
                 s.generated_at,
                 CASE
                     WHEN EXISTS (
@@ -87,6 +89,7 @@ def _get_active_signals_dataframe(conn: sqlite3.Connection) -> pd.DataFrame:
                 round(row_dict["correlation_strength"], 3) if row_dict["correlation_strength"] is not None else None,
                 round(row_dict["expected_target"], 4) if row_dict["expected_target"] is not None else None,
                 round(row_dict["invalidation_threshold"], 4) if row_dict["invalidation_threshold"] is not None else None,
+                row_dict["data_warning"] or "",
                 row_dict["generated_at"],
                 row_dict["executed"],
             ])
@@ -125,16 +128,20 @@ def build_signal_dashboard_tab(conn: sqlite3.Connection, config: AppConfig) -> N
             tickers_done = len(feat_results.get("tickers", {}))
             log_lines.append(f"  Features computed: {pairs_done} pair(s), {tickers_done} ticker(s)")
 
-            log_lines.append("Running lead-lag engine...")
-            signals = run_engine_for_all_pairs(conn)
-            log_lines.append(f"  Signals generated: {len(signals)}")
-            if signals:
-                for s in signals:
-                    log_lines.append(
-                        f"    {s.get('ticker_a')} -> {s.get('ticker_b')}: "
-                        f"{s.get('direction')} | stability={s.get('stability_score', 0):.1f} | "
-                        f"corr={s.get('correlation_strength', 0):.3f}"
-                    )
+            log_lines.append("\nRunning lead-lag engine...")
+            result = run_engine_for_all_pairs(conn)
+            signals = result.get("signals", [])
+            summaries = result.get("pair_summaries", [])
+
+            log_lines.append(f"  Pairs analyzed: {len(summaries)}")
+            for s in summaries:
+                icon = {"signal": "[SIGNAL]", "gated": "[gated]", "skipped": "[skipped]"}.get(s["outcome"], "")
+                line = f"  {icon} {s['ticker_a']}/{s['ticker_b']}: {s['reason']}"
+                if s.get("data_warning"):
+                    line += f"  !! {s['data_warning']}"
+                log_lines.append(line)
+
+            log_lines.append(f"\nSignals generated: {len(signals)}")
             log_lines.append("Analysis complete.")
             return "\n".join(log_lines), _get_active_signals_dataframe(conn)
         except Exception as exc:

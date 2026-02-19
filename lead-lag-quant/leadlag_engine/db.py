@@ -44,6 +44,7 @@ def init_engine_schema(conn: sqlite3.Connection) -> None:
             invalidation_threshold  REAL,
             sizing_tier             TEXT,
             flow_map_entry          TEXT,
+            data_warning            TEXT,
             generated_at            TEXT NOT NULL,
             PRIMARY KEY (ticker_a, ticker_b, signal_date)
         );
@@ -63,6 +64,12 @@ def init_engine_schema(conn: sqlite3.Connection) -> None:
         );
     """)
     conn.commit()
+    # Migration: add data_warning column if this DB was created before this version
+    try:
+        conn.execute("ALTER TABLE signals ADD COLUMN data_warning TEXT")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
 
 
 def upsert_signal(conn: sqlite3.Connection, signal: dict) -> None:
@@ -78,14 +85,14 @@ def upsert_signal(conn: sqlite3.Connection, signal: dict) -> None:
             correlation_strength, stability_score,
             regime_state, adjustment_policy_id,
             direction, expected_target, invalidation_threshold,
-            sizing_tier, flow_map_entry, generated_at
+            sizing_tier, flow_map_entry, data_warning, generated_at
         ) VALUES (
             :ticker_a, :ticker_b, :signal_date,
             :optimal_lag, :window_length,
             :correlation_strength, :stability_score,
             :regime_state, :adjustment_policy_id,
             :direction, :expected_target, :invalidation_threshold,
-            :sizing_tier, :flow_map_entry, :generated_at
+            :sizing_tier, :flow_map_entry, :data_warning, :generated_at
         )
         ON CONFLICT(ticker_a, ticker_b, signal_date) DO UPDATE SET
             optimal_lag           = excluded.optimal_lag,
@@ -97,7 +104,8 @@ def upsert_signal(conn: sqlite3.Connection, signal: dict) -> None:
             expected_target       = excluded.expected_target,
             invalidation_threshold = excluded.invalidation_threshold,
             sizing_tier           = excluded.sizing_tier,
-            flow_map_entry        = excluded.flow_map_entry
+            flow_map_entry        = excluded.flow_map_entry,
+            data_warning          = excluded.data_warning
             -- generated_at intentionally EXCLUDED from SET: immutability anchor
     """
     conn.execute(sql, signal)
