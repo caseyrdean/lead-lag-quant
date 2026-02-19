@@ -95,11 +95,11 @@ Plans:
   3. Open positions display entry price, current price (15-min delayed via Polygon snapshot), and unrealized P&L, with automatic refresh during market hours
   4. Closed positions record realized P&L in SQLite; full trade history (all opens and closes with timestamps and P&L) is visible in the UI
   5. Positions are flagged for exit in the UI when the leader reversal exceeds the signal's invalidation threshold
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 05-01: Paper trading engine (auto-execute, manual trades, position tracking, P&L)
-- [ ] 05-02: Signal Dashboard panel (UI-01) and Paper Trading panel (UI-04)
+- [ ] 05-01-PLAN.md -- Paper trading engine: SQLite schema (3 tables), trading engine (set capital, open/close positions, auto-execute), Polygon price poller with market hours guard, tests
+- [ ] 05-02-PLAN.md -- Signal Dashboard tab (UI-01) and Paper Trading tab (UI-04) integrated into existing Gradio app with gr.Timer price refresh
 
 ### Phase 6: Backtest & Visualization
 **Goal**: Users can validate historical signal quality through stored-data backtesting and explore lead-lag relationships, regime state, and backtest results through dedicated visualization panels
