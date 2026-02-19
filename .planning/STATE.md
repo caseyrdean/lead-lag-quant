@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 5 of 6 (Paper Trading Simulation)
-Plan: 0 of 2 -- Not started
-Status: Ready for planning
-Last activity: 2026-02-18 -- Completed Phase 4 (17/17 verified: ENGINE-01/02, REGIME-01/02, SIGNAL-01/02, pipeline orchestrator, 137 tests passing)
+Plan: 1 of 2 -- Plan 05-01 complete
+Status: Executing
+Last activity: 2026-02-19 -- Completed Plan 05-01 (paper_trading engine, price poller, 10 new tests, 147 total passing)
 
-Progress: [###############] 67%
+Progress: [################] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 16min
-- Total execution time: 2.36 hours
+- Total plans completed: 10
+- Average duration: 15min
+- Total execution time: 2.5 hours
 
 **By Phase:**
 
@@ -32,8 +32,10 @@ Progress: [###############] 67%
 | 03-feature-engineering | 2 | 14min | 7min |
 | 04-lead-lag-engine-regime-signals | 2 | 40min | 20min |
 
+| 05-paper-trading-simulation | 1 | 8min | 8min |
+
 **Recent Trend:**
-- Last 5 plans: 03-01 (6min), 03-02 (8min), 04-01 (18min), 04-02 (22min)
+- Last 5 plans: 03-02 (8min), 04-01 (18min), 04-02 (22min), 05-01 (8min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -81,6 +83,12 @@ Recent decisions affecting current work:
 - [04-02]: passes_gate uses abs(correlation_strength) > 0.65 -- allows short signals (strong inverse correlations) to pass the strength gate; direction handled separately by sign
 - [04-02]: classify_regime() MUST be called before compute_stability_score() -- regime_stability_score() is an INPUT to RSI-v2 composite; ordering enforced in pipeline.py
 - [04-02]: adjustment_policy_id='policy_a' hardcoded in generate_signal() -- locked decision, not configurable
+- [05-01]: Average-cost basis for position tracking (not FIFO); simpler and appropriate for paper trading
+- [05-01]: SIZING_FRACTIONS: full=20%, half=10%, quarter=5% of starting capital per position
+- [05-01]: Polygon snapshot fallback chain: lastTrade.p -> min.c -> day.c -> prevDay.c
+- [05-01]: Lazy-init NYSE calendar singleton to avoid import-time pandas_market_calendars overhead
+- [05-01]: Partial unique index idx_trades_signal_buy prevents duplicate auto-execution at DB level
+- [05-01]: init_paper_trading_schema wired into init_schema() following same pattern as init_engine_schema
 
 ### Pending Todos
 
@@ -93,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Stopped at: Completed Phase 4 verification (17/17 passed). Ready to plan Phase 5.
-Resume file: .planning/phases/04-lead-lag-engine-regime-signals/04-VERIFICATION.md
+Last session: 2026-02-19
+Stopped at: Completed 05-01-PLAN.md (paper_trading engine + tests). Ready for 05-02-PLAN.md (Gradio UI).
+Resume file: .planning/phases/05-paper-trading-simulation/05-01-SUMMARY.md
