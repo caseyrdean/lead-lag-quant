@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Any seeded equity pair produces a reproducible, auditable full position spec backed by statistically validated lead-lag relationships -- and a paper trading simulator to validate those signals against real prices before committing capital.
-**Current focus:** Phase 3 - Feature Engineering
+**Current focus:** Phase 4 - Lead-Lag Engine, Regime & Signals
 
 ## Current Position
 
-Phase: 3 of 6 (Feature Engineering)
-Plan: 2 of 3 -- Plan 2 COMPLETE
+Phase: 4 of 6 (Lead-Lag Engine, Regime & Signals)
+Plan: 1 of 4 -- Plan 1 COMPLETE
 Status: Ready
-Last activity: 2026-02-18 -- Completed 03-02-PLAN.md (Remaining features: RS, volatility, z-score, lagged returns, pipeline orchestrator)
+Last activity: 2026-02-18 -- Completed 04-01-PLAN.md (ENGINE-01 lag detector, ENGINE-02 RSI-v2 stability scorer, Phase 4 schema, 105 tests passing)
 
-Progress: [##########....] 50%
+Progress: [############..] 58%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 16min
-- Total execution time: 1.81 hours
+- Total execution time: 1.99 hours
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [##########....] 50%
 | 01-data-ingestion-pipeline | 3 | 55min | 18min |
 | 02-normalization-returns | 2 | 40min | 20min |
 | 03-feature-engineering | 2 | 14min | 7min |
+| 04-lead-lag-engine-regime-signals | 1 | 18min | 18min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (25min), 02-02 (15min), 03-01 (6min), 03-02 (8min)
+- Last 5 plans: 02-02 (15min), 03-01 (6min), 03-02 (8min), 04-01 (18min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [03-02]: Lagged returns use series.shift(lag): positive lag=backward look (first N NaN), negative lag=forward look (last N NaN) -- plan docstring had inverted description but test expectations were authoritative
 - [03-02]: Pipeline separates pair-level features (xcorr, RS) from per-ticker features (volatility, zscore, lagged_returns) for clean orchestration and independent reuse
 - [03-02]: compute_features_all_pairs always includes SPY in per-ticker computation (hardcoded into tickers set)
+- [Phase 04-lead-lag-engine-regime-signals]: RSI-v2 weights: lag_persistence=0.30, walk_forward_oos=0.25, rolling_confirmation=0.20, regime_stability=0.15, lag_drift=0.10 (resolves STATE.md blocker on undefined weights)
+- [Phase 04-lead-lag-engine-regime-signals]: detect_optimal_lag requires MIN_SIGNIFICANT_DAYS=30 per lag; selects by abs(median_corr) but returns signed correlation_strength
+- [Phase 04-lead-lag-engine-regime-signals]: init_engine_schema called from init_schema() so tmp_db fixture creates all Phase 4 tables automatically without conftest changes
 
 ### Pending Todos
 
@@ -82,10 +86,10 @@ None yet.
 ### Blockers/Concerns
 
 - Polygon.io rate limits by plan tier need verification against current docs before Phase 1 implementation
-- stability_score (RSI-v2) component weights not yet defined -- must be specified before Phase 4
+- stability_score (RSI-v2) component weights RESOLVED: defined as lag_persistence=0.30, walk_forward_oos=0.25, rolling_confirmation=0.20, regime_stability=0.15, lag_drift=0.10 in leadlag_engine/stability.py
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 03-02-PLAN.md (Remaining features: RS, volatility, z-score, lagged returns, pipeline orchestrator, 74 tests passing)
-Resume file: .planning/phases/03-feature-engineering/03-02-SUMMARY.md
+Stopped at: Completed 04-01-PLAN.md (ENGINE-01 lag detector, ENGINE-02 RSI-v2 stability scorer, Phase 4 schema, 105 tests passing)
+Resume file: .planning/phases/04-lead-lag-engine-regime-signals/04-01-SUMMARY.md
