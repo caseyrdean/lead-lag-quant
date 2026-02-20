@@ -151,8 +151,8 @@ def build_analytics_tab(conn: sqlite3.Connection, scheduler=None) -> None:
             ticker_breakdown_table,
         ]
 
-        # Auto-refresh all metrics every 5 minutes
-        analytics_timer = gr.Timer(value=300, active=True)
+        # Auto-refresh all metrics every 60 seconds
+        analytics_timer = gr.Timer(value=60, active=True)
         analytics_timer.tick(fn=refresh_all, inputs=[period_radio], outputs=all_outputs)
 
         refresh_btn.click(fn=refresh_all, inputs=[period_radio], outputs=all_outputs)

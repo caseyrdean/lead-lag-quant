@@ -12,6 +12,7 @@ from normalization.returns_calc import compute_returns_all_pairs
 from ui.signal_dashboard import build_signal_dashboard_tab
 from ui.paper_trading_panel import build_paper_trading_tab
 from ui.analytics_panel import build_analytics_tab
+from utils.background_price_poller import BackgroundPricePoller
 from utils.config import AppConfig
 from utils.db import get_connection, init_schema
 from utils.pipeline_scheduler import PipelineScheduler
@@ -39,6 +40,9 @@ def create_app(config: AppConfig) -> gr.Blocks:
 
     scheduler = PipelineScheduler(conn, client, config)
     scheduler.start()
+
+    price_poller = BackgroundPricePoller(conn, config.polygon_api_key)
+    price_poller.start()
 
     # ------------------------------------------------------------------
     # Shared helpers

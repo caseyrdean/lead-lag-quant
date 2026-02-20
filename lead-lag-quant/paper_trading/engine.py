@@ -112,16 +112,16 @@ def open_or_add_position(
     conn.execute(
         """
         INSERT INTO paper_positions
-            (portfolio_id, ticker, shares, avg_cost, source_signal_id,
+            (portfolio_id, ticker, shares, avg_cost, current_price, source_signal_id,
              invalidation_threshold, opened_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(portfolio_id, ticker) DO UPDATE SET
             avg_cost = (shares * avg_cost + excluded.shares * excluded.avg_cost)
                        / (shares + excluded.shares),
             shares   = shares + excluded.shares
         """,
         (
-            portfolio_id, ticker, shares, price,
+            portfolio_id, ticker, shares, price, price,
             source_signal_id, invalidation_threshold, executed_at,
         ),
     )

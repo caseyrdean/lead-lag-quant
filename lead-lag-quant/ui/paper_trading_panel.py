@@ -41,7 +41,7 @@ from paper_trading.market_data import (
     PERFORMANCE_COLUMNS,
     SIGNAL_COLUMNS,
 )
-from paper_trading.price_poller import get_market_status_label, poll_and_update_prices
+from paper_trading.price_poller import get_market_status_label
 from utils.config import AppConfig
 from utils.logging import get_logger
 
@@ -312,17 +312,15 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
             return (f"Error: {exc}", *_get_summary(conn))
 
     def refresh_callback(portfolio_period: str = "6M"):
-        """Poll prices and refresh positions, portfolio summary, performance table, and chart.
+        """Refresh positions, portfolio summary, performance table, and chart from DB.
+
+        Prices are kept current by the BackgroundPricePoller daemon; this
+        callback is a pure DB read — no Polygon API calls made here.
 
         Outputs:
             positions_table, cash, unrealized, realized, total_pnl, winrate,
             performance_table, portfolio_chart, market_status
         """
-        try:
-            poll_and_update_prices(conn, config.polygon_api_key)
-        except Exception as exc:
-            log.error("refresh_prices_failed", error=str(exc)[:200])
-
         hist_df = get_portfolio_value_history(conn, lookback_days=period_to_days(portfolio_period))
         portfolio_fig = build_portfolio_value_chart(hist_df)
         perf_df = get_performance_table(conn)
@@ -385,9 +383,9 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
         ticker_state = gr.State(value="")
         price_state = gr.State(value=0.0)
 
-        # Hidden timer — fires every 5 min; applies closing prices when market
-        # is closed, polls Polygon live prices when market is open.
-        price_timer = gr.Timer(value=300, active=True)
+        # Hidden timer — fires every 30 s; reads fresh prices written by the
+        # BackgroundPricePoller daemon (no Polygon API calls from this timer).
+        price_timer = gr.Timer(value=30, active=True)
 
         # ══════════════════════════════════════════════════════════════
         # SECTION 1 — PAIR RESEARCH

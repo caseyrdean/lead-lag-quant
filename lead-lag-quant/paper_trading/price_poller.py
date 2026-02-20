@@ -131,20 +131,36 @@ def apply_db_closing_prices(
 def get_market_status_label(conn: sqlite3.Connection) -> str:
     """Return a human-readable market status string for the UI.
 
+    Shows when prices were actually last written to the DB by the
+    BackgroundPricePoller daemon, not just the current wall-clock time.
+
     Examples:
-        "Market OPEN  —  live prices polled at 10:32 ET"
-        "Market CLOSED  —  showing closing prices as of 2026-02-19"
+        "Market OPEN  —  live prices  (last tick: 10:32 ET)"
+        "Market CLOSED  —  closing prices as of 2026-02-19  (last tick: 16:01 ET)"
     """
     try:
-        if is_market_open():
-            now_et = pd.Timestamp.now(tz="America/New_York")
-            return f"Market OPEN  —  live prices  (polled at {now_et.strftime('%H:%M ET')})"
-
+        # Most recent last_price_at across all open positions
         row = conn.execute(
+            "SELECT MAX(last_price_at) FROM paper_positions WHERE current_price IS NOT NULL"
+        ).fetchone()
+        last_tick_utc = row[0] if (row and row[0]) else None
+
+        tick_str = ""
+        if last_tick_utc:
+            try:
+                ts_et = pd.Timestamp(last_tick_utc, tz="UTC").tz_convert("America/New_York")
+                tick_str = f"  (last tick: {ts_et.strftime('%H:%M ET')})"
+            except Exception:
+                pass
+
+        if is_market_open():
+            return f"Market OPEN  —  live prices{tick_str}"
+
+        row2 = conn.execute(
             "SELECT MAX(trading_day) FROM normalized_bars"
         ).fetchone()
-        last_day = row[0] if (row and row[0]) else "no data yet"
-        return f"Market CLOSED  —  showing closing prices as of {last_day}"
+        last_day = row2[0] if (row2 and row2[0]) else "no data yet"
+        return f"Market CLOSED  —  closing prices as of {last_day}{tick_str}"
     except Exception as exc:
         log.error("get_market_status_label_failed", error=str(exc)[:200])
         return "Market status unknown"
