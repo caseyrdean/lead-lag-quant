@@ -14,6 +14,7 @@ from ui.paper_trading_panel import build_paper_trading_tab
 from ui.analytics_panel import build_analytics_tab
 from utils.config import AppConfig
 from utils.db import get_connection, init_schema
+from utils.pipeline_scheduler import PipelineScheduler
 
 
 def create_app(config: AppConfig) -> gr.Blocks:
@@ -35,6 +36,9 @@ def create_app(config: AppConfig) -> gr.Blocks:
     )
     conn = get_connection(config.db_path)
     init_schema(conn)
+
+    scheduler = PipelineScheduler(conn, client, config)
+    scheduler.start()
 
     # ------------------------------------------------------------------
     # Shared helpers
@@ -251,6 +255,16 @@ def create_app(config: AppConfig) -> gr.Blocks:
     with gr.Blocks(title="Lead-Lag Quant") as app:
         gr.Markdown("# Lead-Lag Quant")
 
+        # --- Global pipeline status bar ---
+        pipeline_status_display = gr.Textbox(
+            label="Auto Data Pipeline",
+            value=scheduler.get_status_label,
+            interactive=False,
+            lines=1,
+        )
+        status_timer = gr.Timer(value=30, active=True)
+        status_timer.tick(fn=scheduler.get_status_label, outputs=[pipeline_status_display])
+
         with gr.Tab("Pair Management"):
             gr.Markdown("### Add Ticker Pairs")
             gr.Markdown(
@@ -339,7 +353,7 @@ def create_app(config: AppConfig) -> gr.Blocks:
         build_paper_trading_tab(conn, config)
 
         # --- Phase 6: Performance Analytics ---
-        build_analytics_tab(conn)
+        build_analytics_tab(conn, scheduler)
 
         # Load pairs on startup
         app.load(fn=refresh_pairs, outputs=[pair_table])

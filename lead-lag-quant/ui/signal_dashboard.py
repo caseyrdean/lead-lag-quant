@@ -197,6 +197,10 @@ def build_signal_dashboard_tab(conn: sqlite3.Connection, config: AppConfig) -> N
 
         status_msg = gr.Textbox(label="Status", value="", interactive=False)
 
+        # Auto-refresh signals every 5 minutes
+        signal_timer = gr.Timer(value=300, active=True)
+        signal_timer.tick(fn=refresh_signals_callback, outputs=[signals_table])
+
         # Event wiring
         run_analysis_btn.click(
             fn=run_analysis_callback,

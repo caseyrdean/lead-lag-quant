@@ -19,7 +19,7 @@ from paper_trading.analytics import (
 )
 
 
-def build_analytics_tab(conn: sqlite3.Connection) -> None:
+def build_analytics_tab(conn: sqlite3.Connection, scheduler=None) -> None:
     """Build and wire the Analytics tab inside an existing gr.Blocks context."""
 
     with gr.Tab("Analytics"):
@@ -150,6 +150,10 @@ def build_analytics_tab(conn: sqlite3.Connection) -> None:
             monthly_heatmap_chart,
             ticker_breakdown_table,
         ]
+
+        # Auto-refresh all metrics every 5 minutes
+        analytics_timer = gr.Timer(value=300, active=True)
+        analytics_timer.tick(fn=refresh_all, inputs=[period_radio], outputs=all_outputs)
 
         refresh_btn.click(fn=refresh_all, inputs=[period_radio], outputs=all_outputs)
         period_radio.change(

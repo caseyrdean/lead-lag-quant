@@ -716,6 +716,10 @@ def build_paper_trading_tab(conn: sqlite3.Connection, config: AppConfig) -> None
                 market_status_display,
             ],
         )
+        price_timer.tick(
+            fn=refresh_signals_callback,
+            outputs=[signals_table],
+        )
 
         portfolio_period_radio.change(
             fn=portfolio_period_callback,
