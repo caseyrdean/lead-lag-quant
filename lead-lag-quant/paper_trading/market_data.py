@@ -11,10 +11,8 @@ Free-tier Polygon endpoints used:
 
 import sqlite3
 
-import matplotlib
-matplotlib.use("Agg")  # Must be before pyplot import to avoid GUI errors
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import pandas as pd
 import requests
 
@@ -207,109 +205,108 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def build_chart(df: pd.DataFrame, ticker: str) -> plt.Figure | None:
-    """Build a 3-panel chart: Price + MAs, RSI(14), MACD.
+def _dark_layout(fig: go.Figure, title: str = "", height: int = 500) -> None:
+    """Apply consistent dark theme to a Plotly figure in-place."""
+    fig.update_layout(
+        title=dict(text=title, font=dict(color="#e0e0e0", size=13)),
+        paper_bgcolor="#1a1a2e",
+        plot_bgcolor="#0f0f23",
+        font=dict(color="#e0e0e0"),
+        height=height,
+        hovermode="x unified",
+        legend=dict(
+            bgcolor="#1a1a2e", bordercolor="#334466",
+            font=dict(color="#e0e0e0"),
+        ),
+    )
+    fig.update_xaxes(gridcolor="#334466", zerolinecolor="#334466", showgrid=True)
+    fig.update_yaxes(gridcolor="#334466", zerolinecolor="#334466", showgrid=True)
 
-    Returns a matplotlib Figure suitable for gr.Plot, or None if df is empty.
-    Closes all prior figures to avoid memory leaks.
+
+def build_chart(df: pd.DataFrame, ticker: str) -> go.Figure | None:
+    """Build an interactive 3-panel chart: Price + MAs, RSI(14), MACD.
+
+    Hover shows the ticker name, date, and value for each trace.
+    Returns a Plotly Figure suitable for gr.Plot, or None if df is empty.
     """
     if df.empty:
         return None
 
-    plt.close("all")
+    dates = (
+        df["trading_day"].dt.strftime("%Y-%m-%d").tolist()
+        if "trading_day" in df.columns
+        else list(range(len(df)))
+    )
 
-    bg_dark = "#1a1a2e"
-    panel_bg = "#0f0f23"
-    text_color = "#e0e0e0"
-    grid_color = "#334466"
-
-    fig = plt.figure(figsize=(12, 8), facecolor=bg_dark)
-    gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1], hspace=0.08)
-    fig.patch.set_facecolor(bg_dark)
-
-    ax1 = fig.add_subplot(gs[0])
-    ax2 = fig.add_subplot(gs[1], sharex=ax1)
-    ax3 = fig.add_subplot(gs[2], sharex=ax1)
-
-    x = range(len(df))
+    fig = make_subplots(
+        rows=3, cols=1,
+        shared_xaxes=True,
+        row_heights=[0.6, 0.2, 0.2],
+        vertical_spacing=0.02,
+    )
 
     # --- Panel 1: Price + Moving Averages ---
-    ax1.set_facecolor(panel_bg)
-    ax1.plot(x, df["close"], color="#00bcd4", linewidth=1.5, label="Close")
+    fig.add_trace(go.Scatter(
+        x=dates, y=df["close"].round(2),
+        name=f"{ticker} Close",
+        line=dict(color="#00bcd4", width=1.5),
+        hovertemplate=f"<b>{ticker}</b><br>%{{x}}<br>Close: $%{{y:.2f}}<extra></extra>",
+    ), row=1, col=1)
+
     if "ma20" in df.columns:
-        ax1.plot(x, df["ma20"], color="#ff9800", linewidth=1.0, label="MA20", alpha=0.9)
+        fig.add_trace(go.Scatter(
+            x=dates, y=df["ma20"].round(2),
+            name="MA20",
+            line=dict(color="#ff9800", width=1.0),
+            hovertemplate=f"<b>{ticker}</b><br>%{{x}}<br>MA20: $%{{y:.2f}}<extra></extra>",
+        ), row=1, col=1)
+
     if "ma50" in df.columns:
-        ax1.plot(x, df["ma50"], color="#e91e63", linewidth=1.0, label="MA50", alpha=0.9)
-    ax1.set_title(
-        f"{ticker} — Price & Moving Averages",
-        color=text_color, fontsize=11, pad=6,
-    )
-    ax1.set_ylabel("Price ($)", color=text_color, fontsize=9)
-    ax1.legend(
-        loc="upper left", fontsize=8,
-        facecolor=bg_dark, labelcolor=text_color, framealpha=0.7,
-    )
-    ax1.tick_params(colors=text_color, labelbottom=False)
-    ax1.grid(color=grid_color, alpha=0.5, linewidth=0.5)
-    for spine in ax1.spines.values():
-        spine.set_color(grid_color)
+        fig.add_trace(go.Scatter(
+            x=dates, y=df["ma50"].round(2),
+            name="MA50",
+            line=dict(color="#e91e63", width=1.0),
+            hovertemplate=f"<b>{ticker}</b><br>%{{x}}<br>MA50: $%{{y:.2f}}<extra></extra>",
+        ), row=1, col=1)
 
     # --- Panel 2: RSI ---
-    ax2.set_facecolor(panel_bg)
     if "rsi" in df.columns:
-        ax2.plot(x, df["rsi"], color="#9c27b0", linewidth=1.2)
-        ax2.axhline(70, color="#f44336", linewidth=0.8, linestyle="--", alpha=0.7)
-        ax2.axhline(30, color="#4caf50", linewidth=0.8, linestyle="--", alpha=0.7)
-        ax2.fill_between(
-            x, df["rsi"], 70, where=(df["rsi"] >= 70),
-            alpha=0.12, color="#f44336",
-        )
-        ax2.fill_between(
-            x, df["rsi"], 30, where=(df["rsi"] <= 30),
-            alpha=0.12, color="#4caf50",
-        )
-        ax2.set_ylim(0, 100)
-    ax2.set_ylabel("RSI(14)", color=text_color, fontsize=9)
-    ax2.tick_params(colors=text_color, labelbottom=False)
-    ax2.grid(color=grid_color, alpha=0.5, linewidth=0.5)
-    for spine in ax2.spines.values():
-        spine.set_color(grid_color)
+        fig.add_trace(go.Scatter(
+            x=dates, y=df["rsi"].round(2),
+            name="RSI(14)",
+            line=dict(color="#9c27b0", width=1.2),
+            hovertemplate=f"<b>{ticker}</b><br>%{{x}}<br>RSI: %{{y:.1f}}<extra></extra>",
+        ), row=2, col=1)
+        fig.add_hline(y=70, line_dash="dash", line_color="#f44336", line_width=0.8, opacity=0.7, row=2, col=1)
+        fig.add_hline(y=30, line_dash="dash", line_color="#4caf50", line_width=0.8, opacity=0.7, row=2, col=1)
 
     # --- Panel 3: MACD ---
-    ax3.set_facecolor(panel_bg)
     if "macd" in df.columns:
-        ax3.plot(x, df["macd"], color="#2196f3", linewidth=1.2, label="MACD")
-        ax3.plot(
-            x, df["macd_signal"], color="#ff5722",
-            linewidth=1.0, linestyle="--", label="Signal",
-        )
-        hist_colors = [
-            "#4caf50" if v >= 0 else "#f44336"
-            for v in df["macd_hist"]
-        ]
-        ax3.bar(x, df["macd_hist"], color=hist_colors, alpha=0.5, width=0.8)
-        ax3.axhline(0, color=grid_color, linewidth=0.8, alpha=0.7)
-        ax3.legend(
-            loc="upper left", fontsize=8,
-            facecolor=bg_dark, labelcolor=text_color, framealpha=0.7,
-        )
-    ax3.set_ylabel("MACD", color=text_color, fontsize=9)
-    ax3.grid(color=grid_color, alpha=0.5, linewidth=0.5)
-    for spine in ax3.spines.values():
-        spine.set_color(grid_color)
+        fig.add_trace(go.Scatter(
+            x=dates, y=df["macd"].round(4),
+            name="MACD",
+            line=dict(color="#2196f3", width=1.2),
+            hovertemplate=f"<b>{ticker}</b><br>%{{x}}<br>MACD: %{{y:.4f}}<extra></extra>",
+        ), row=3, col=1)
+        fig.add_trace(go.Scatter(
+            x=dates, y=df["macd_signal"].round(4),
+            name="Signal",
+            line=dict(color="#ff5722", width=1.0, dash="dash"),
+            hovertemplate=f"<b>{ticker}</b><br>%{{x}}<br>Signal: %{{y:.4f}}<extra></extra>",
+        ), row=3, col=1)
+        hist_colors = ["#4caf50" if v >= 0 else "#f44336" for v in df["macd_hist"]]
+        fig.add_trace(go.Bar(
+            x=dates, y=df["macd_hist"].round(4),
+            name="Histogram",
+            marker_color=hist_colors,
+            opacity=0.5,
+            hovertemplate=f"<b>{ticker}</b><br>%{{x}}<br>Hist: %{{y:.4f}}<extra></extra>",
+        ), row=3, col=1)
 
-    # X-axis date labels on bottom panel only
-    n = len(df)
-    step = max(1, n // 8)
-    tick_positions = list(range(0, n, step))
-    if "trading_day" in df.columns:
-        tick_labels = [str(df["trading_day"].iloc[i])[:10] for i in tick_positions]
-    else:
-        tick_labels = [str(i) for i in tick_positions]
-    ax3.set_xticks(tick_positions)
-    ax3.set_xticklabels(tick_labels, rotation=30, fontsize=7, color=text_color)
-
-    fig.subplots_adjust(left=0.07, right=0.97, top=0.94, bottom=0.10)
+    _dark_layout(fig, title=f"{ticker} — Price & Moving Averages", height=600)
+    fig.update_yaxes(title_text="Price ($)", row=1, col=1)
+    fig.update_yaxes(title_text="RSI(14)", range=[0, 100], row=2, col=1)
+    fig.update_yaxes(title_text="MACD", row=3, col=1)
     return fig
 
 
@@ -518,81 +515,45 @@ def get_portfolio_value_history(
         return pd.DataFrame(columns=["date", "value"])
 
 
-def build_portfolio_value_chart(df: pd.DataFrame) -> plt.Figure | None:
-    """Build a trading P&L chart (stocks only — excludes idle cash).
+def build_portfolio_value_chart(df: pd.DataFrame) -> go.Figure | None:
+    """Build an interactive trading P&L chart (stocks only — excludes idle cash).
 
     Baseline is 0 (break-even). Green fill = profit, red fill = loss.
-    Latest P&L annotated with sign prefix.
-
-    Returns a matplotlib Figure or None if df has fewer than 2 rows.
+    Hover shows date and exact P&L value.
+    Returns a Plotly Figure or None if df has fewer than 2 rows.
     """
     if df.empty or len(df) < 2:
         return None
 
-    plt.close("all")
-
-    bg = "#1a1a2e"
-    panel_bg = "#0f0f23"
-    text_color = "#e0e0e0"
-    grid_color = "#334466"
-
-    fig, ax = plt.subplots(figsize=(13, 4), facecolor=bg)
-    ax.set_facecolor(panel_bg)
-
-    x = range(len(df))
+    dates = df["date"].tolist()
     values = df["value"].tolist()
 
-    ax.plot(x, values, color="#00bcd4", linewidth=2.0, zorder=3)
+    fig = go.Figure()
 
-    # Green fill above 0, red fill below 0
-    ax.fill_between(
-        x, values, 0,
-        where=[v >= 0 for v in values],
-        alpha=0.18, color="#4caf50", zorder=2,
-    )
-    ax.fill_between(
-        x, values, 0,
-        where=[v < 0 for v in values],
-        alpha=0.18, color="#f44336", zorder=2,
-    )
+    # Green fill for positive region, red for negative
+    fig.add_trace(go.Scatter(
+        x=dates, y=[max(v, 0) for v in values],
+        fill="tozeroy", fillcolor="rgba(76,175,80,0.18)",
+        line=dict(width=0), showlegend=False, hoverinfo="skip",
+    ))
+    fig.add_trace(go.Scatter(
+        x=dates, y=[min(v, 0) for v in values],
+        fill="tozeroy", fillcolor="rgba(244,67,54,0.18)",
+        line=dict(width=0), showlegend=False, hoverinfo="skip",
+    ))
 
-    # Break-even reference line
-    ax.axhline(
-        0, color="#888", linewidth=0.9,
-        linestyle="--", alpha=0.7, label="Break-even",
-    )
+    # P&L line
+    fig.add_trace(go.Scatter(
+        x=dates, y=values,
+        name="Portfolio P&L",
+        line=dict(color="#00bcd4", width=2.0),
+        hovertemplate="%{x}<br>P&L: $%{y:,.2f}<extra>Portfolio P&L</extra>",
+    ))
 
-    # Annotate latest P&L with green "+" or red "-" prefix
-    latest = values[-1]
-    if latest >= 0:
-        ann_text = f"  +${latest:,.2f}"
-        ann_color = "#4caf50"
-    else:
-        ann_text = f"  -${abs(latest):,.2f}"
-        ann_color = "#f44336"
-    ax.annotate(ann_text, xy=(len(df) - 1, latest), color=ann_color, fontsize=9, va="center")
+    fig.add_hline(y=0, line_dash="dash", line_color="#888888", line_width=0.9, opacity=0.7)
 
-    ax.set_title(
-        "Trading P&L Over Time  (Stocks Only — Excludes Idle Cash)",
-        color=text_color, fontsize=11, pad=6,
-    )
-    ax.set_ylabel("P&L ($)", color=text_color, fontsize=9)
-    ax.legend(loc="upper left", fontsize=8, facecolor=bg, labelcolor=text_color, framealpha=0.7)
-    ax.tick_params(colors=text_color)
-    ax.grid(color=grid_color, alpha=0.5, linewidth=0.5)
-    for spine in ax.spines.values():
-        spine.set_color(grid_color)
-
-    # X-axis date labels
-    n = len(df)
-    step = max(1, n // 8)
-    tick_positions = list(range(0, n, step))
-    tick_labels = [df["date"].iloc[i] for i in tick_positions]
-    ax.set_xticks(tick_positions)
-    ax.set_xticklabels(tick_labels, rotation=30, fontsize=7, color=text_color)
-
-    fig.patch.set_facecolor(bg)
-    fig.subplots_adjust(left=0.08, right=0.97, top=0.90, bottom=0.18)
+    _dark_layout(fig, title="Trading P&L Over Time  (Stocks Only — Excludes Idle Cash)", height=350)
+    fig.update_yaxes(title_text="P&L ($)")
     return fig
 
 
@@ -601,11 +562,11 @@ def build_correlation_chart(
     leader: str,
     followers: list[str],
     days: int = 180,
-) -> plt.Figure | None:
-    """Build a normalized price comparison chart: leader vs follower stocks.
+) -> go.Figure | None:
+    """Build an interactive normalized price comparison chart.
 
-    All series are indexed to 100 at their first available date so relative
-    performance is directly comparable on one axis.
+    All series are indexed to 100 at their first available date.
+    Hover shows the ticker name, date, and indexed value for every line.
 
     Args:
         conn: SQLite connection.
@@ -614,11 +575,10 @@ def build_correlation_chart(
         days: Number of trading days of history to fetch.
 
     Returns:
-        matplotlib Figure, or None if no data is available.
+        Plotly Figure, or None if no data is available.
     """
     tickers = [leader] + [f for f in followers if f != leader]
 
-    # Fetch close series for each ticker
     raw: dict[str, pd.Series] = {}
     for ticker in tickers:
         df = get_price_history(conn, ticker, days=days)
@@ -641,70 +601,46 @@ def build_correlation_chart(
             if base and base != 0:
                 normalized[col] = normalized[col] / base * 100
 
-    plt.close("all")
-
-    bg = "#1a1a2e"
-    panel_bg = "#0f0f23"
-    text_color = "#e0e0e0"
-    grid_color = "#334466"
     follower_palette = [
         "#ff9800", "#e91e63", "#4caf50",
         "#9c27b0", "#00bcd4", "#ff5722", "#03a9f4",
     ]
 
-    fig, ax = plt.subplots(figsize=(13, 6), facecolor=bg)
-    ax.set_facecolor(panel_bg)
-
-    x = range(len(normalized))
+    date_strs = [str(d)[:10] for d in normalized.index]
+    fig = go.Figure()
 
     # Leader — thick gold reference line
     if leader in normalized.columns:
-        ax.plot(
-            x, normalized[leader],
-            color="#ffd700", linewidth=2.5,
-            label=f"{leader} (leader)", zorder=5,
-        )
+        fig.add_trace(go.Scatter(
+            x=date_strs,
+            y=normalized[leader].round(2),
+            name=f"{leader} (leader)",
+            line=dict(color="#ffd700", width=2.5),
+            hovertemplate=f"<b>{leader} (leader)</b><br>%{{x}}<br>Indexed: %{{y:.2f}}<extra></extra>",
+        ))
 
     # Followers — coloured lines
-    color_idx = 0
-    for ticker in followers:
+    for i, ticker in enumerate(followers):
         if ticker in normalized.columns:
-            color = follower_palette[color_idx % len(follower_palette)]
-            ax.plot(
-                x, normalized[ticker],
-                color=color, linewidth=1.8,
-                label=ticker, alpha=0.9,
-            )
-            color_idx += 1
+            color = follower_palette[i % len(follower_palette)]
+            fig.add_trace(go.Scatter(
+                x=date_strs,
+                y=normalized[ticker].round(2),
+                name=ticker,
+                line=dict(color=color, width=1.8),
+                opacity=0.9,
+                hovertemplate=f"<b>{ticker}</b><br>%{{x}}<br>Indexed: %{{y:.2f}}<extra></extra>",
+            ))
 
-    # Baseline reference
-    ax.axhline(100, color=grid_color, linewidth=0.8, linestyle="--", alpha=0.5)
+    fig.add_hline(y=100, line_dash="dash", line_color="#334466", line_width=0.8, opacity=0.5)
 
     follower_str = ", ".join(followers) if followers else "none"
-    ax.set_title(
-        f"Correlation View — Leader: {leader}  |  Positions: {follower_str}",
-        color=text_color, fontsize=11, pad=8,
+    _dark_layout(
+        fig,
+        title=f"Correlation View — Leader: {leader}  |  Positions: {follower_str}",
+        height=450,
     )
-    ax.set_ylabel("Indexed Price (start = 100)", color=text_color, fontsize=9)
-    ax.legend(
-        loc="upper left", fontsize=9,
-        facecolor=bg, labelcolor=text_color, framealpha=0.75,
-    )
-    ax.tick_params(colors=text_color)
-    ax.grid(color=grid_color, alpha=0.5, linewidth=0.5)
-    for spine in ax.spines.values():
-        spine.set_color(grid_color)
-
-    # X-axis date labels
-    n = len(normalized)
-    step = max(1, n // 8)
-    tick_positions = list(range(0, n, step))
-    tick_labels = [str(normalized.index[i])[:10] for i in tick_positions]
-    ax.set_xticks(tick_positions)
-    ax.set_xticklabels(tick_labels, rotation=30, fontsize=7, color=text_color)
-
-    fig.patch.set_facecolor(bg)
-    fig.subplots_adjust(left=0.07, right=0.97, top=0.92, bottom=0.12)
+    fig.update_yaxes(title_text="Indexed Price (start = 100)")
     return fig
 
 

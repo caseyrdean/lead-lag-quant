@@ -11,6 +11,7 @@ from normalization.normalizer import normalize_all_pairs
 from normalization.returns_calc import compute_returns_all_pairs
 from ui.signal_dashboard import build_signal_dashboard_tab
 from ui.paper_trading_panel import build_paper_trading_tab
+from ui.analytics_panel import build_analytics_tab
 from utils.config import AppConfig
 from utils.db import get_connection, init_schema
 
@@ -336,6 +337,9 @@ def create_app(config: AppConfig) -> gr.Blocks:
 
         # --- Phase 5: Paper Trading (UI-04) ---
         build_paper_trading_tab(conn, config)
+
+        # --- Phase 6: Performance Analytics ---
+        build_analytics_tab(conn)
 
         # Load pairs on startup
         app.load(fn=refresh_pairs, outputs=[pair_table])
