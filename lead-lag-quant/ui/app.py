@@ -5,7 +5,7 @@ from datetime import date
 
 import gradio as gr
 
-from ingestion_massive.ingestion import ingest_pair
+from ingestion_massive.ingestion import ingest_pair, ingest_ticker
 from ingestion_massive.polygon_client import PolygonClient
 from normalization.normalizer import normalize_all_pairs
 from normalization.returns_calc import compute_returns_all_pairs
@@ -51,57 +51,70 @@ def create_app(config: AppConfig) -> gr.Blocks:
     # Tab 1 callbacks
     # ------------------------------------------------------------------
 
-    def add_pair(leader: str, follower: str):
-        """Validate and persist a new ticker pair.
+    def add_pairs_batch(leader: str, followers_raw: str):
+        """Validate and persist one leader against multiple followers in a single action.
 
-        Steps:
-        1. Normalise inputs (strip + uppercase).
-        2. Reject empty or identical tickers.
-        3. Validate both tickers via Polygon reference API.
-        4. Insert into ticker_pairs; catch duplicates gracefully.
+        Followers input is a comma-separated string (e.g. "AMD, CRWV, TSM").
+        The leader is validated once via Polygon. Each follower is then validated
+        and inserted individually, with per-follower status reported.
 
         Returns:
-            Tuple of (status_message, updated_pair_table).
+            Tuple of (status_log, updated_pair_table).
         """
         leader = leader.strip().upper()
-        follower = follower.strip().upper()
 
-        if not leader or not follower:
-            return "Error: Both Leader and Follower tickers are required.", _load_pairs()
+        if not leader:
+            return "Error: Leader ticker is required.", _load_pairs()
 
-        if leader == follower:
-            return "Error: Leader and Follower must be different tickers.", _load_pairs()
+        if not followers_raw or not followers_raw.strip():
+            return "Error: At least one Follower ticker is required.", _load_pairs()
 
-        # Validate leader
-        leader_details = client.get_ticker_details(leader)
-        if leader_details is None:
+        # Parse followers — split on commas, strip whitespace, uppercase, deduplicate
+        raw_tokens = [t.strip().upper() for t in followers_raw.split(",")]
+        followers = list(dict.fromkeys(t for t in raw_tokens if t))  # preserves order, dedupes
+
+        if not followers:
+            return "Error: No valid follower tickers found after parsing.", _load_pairs()
+
+        # Validate leader once
+        if client.get_ticker_details(leader) is None:
             return (
-                f"Invalid ticker: {leader} (not found or inactive on Polygon.io)",
+                f"Invalid leader: {leader} (not found or inactive on Polygon.io)",
                 _load_pairs(),
             )
 
-        # Validate follower
-        follower_details = client.get_ticker_details(follower)
-        if follower_details is None:
-            return (
-                f"Invalid ticker: {follower} (not found or inactive on Polygon.io)",
-                _load_pairs(),
-            )
+        log_lines = [f"Leader: {leader}  |  Followers to add: {', '.join(followers)}\n"]
+        added = skipped = failed = 0
 
-        # Persist pair
-        try:
-            conn.execute(
-                "INSERT INTO ticker_pairs (leader, follower) VALUES (?, ?)",
-                (leader, follower),
-            )
-            conn.commit()
-        except sqlite3.IntegrityError:
-            return (
-                f"Pair {leader}/{follower} already exists.",
-                _load_pairs(),
-            )
+        for follower in followers:
+            if follower == leader:
+                log_lines.append(f"  SKIP  {follower} — same as leader")
+                skipped += 1
+                continue
 
-        return f"Pair {leader}/{follower} added successfully.", _load_pairs()
+            # Validate follower
+            if client.get_ticker_details(follower) is None:
+                log_lines.append(f"  FAIL  {follower} — not found or inactive on Polygon.io")
+                failed += 1
+                continue
+
+            # Insert pair
+            try:
+                conn.execute(
+                    "INSERT INTO ticker_pairs (leader, follower) VALUES (?, ?)",
+                    (leader, follower),
+                )
+                conn.commit()
+                log_lines.append(f"  OK    {leader}/{follower} added")
+                added += 1
+            except sqlite3.IntegrityError:
+                log_lines.append(f"  SKIP  {leader}/{follower} already exists")
+                skipped += 1
+
+        log_lines.append(
+            f"\nDone — {added} added, {skipped} skipped, {failed} failed."
+        )
+        return "\n".join(log_lines), _load_pairs()
 
     def refresh_pairs():
         """Reload and return the current pair table."""
@@ -143,33 +156,42 @@ def create_app(config: AppConfig) -> gr.Blocks:
         if not pairs:
             return "No active pairs. Add pairs in the Pair Management tab first."
 
-        total = len(pairs)
-        log_lines = [f"Starting ingestion for {total} pair(s) [{from_date} -> {to_date}]\n"]
+        # Collect unique tickers across ALL pairs (SPY always included per INGEST-10).
+        # Fetching per-pair causes shared tickers (e.g. NVDA, SPY) to be re-fetched
+        # once per pair they appear in, multiplying API calls and rate-limit wait time.
+        unique_tickers: list[str] = []
+        seen: set[str] = set()
+        for row in pairs:
+            for t in [row[0].upper(), row[1].upper(), "SPY"]:
+                if t not in seen:
+                    unique_tickers.append(t)
+                    seen.add(t)
 
+        total = len(unique_tickers)
+        log_lines = [
+            f"Starting ingestion for {len(pairs)} pair(s) [{from_date} -> {to_date}]",
+            f"Unique tickers to fetch: {', '.join(unique_tickers)}\n",
+        ]
+
+        ticker_results = {}
         try:
-            for i, row in enumerate(pairs):
-                leader, follower = row[0], row[1]
-                progress((i / total), desc=f"Fetching {leader}/{follower}...")
-
-                results = ingest_pair(
-                    client, conn, leader, follower, from_date, to_date
+            for i, ticker in enumerate(unique_tickers):
+                progress((i / total), desc=f"Fetching {ticker} ({i+1}/{total})...")
+                ticker_results[ticker] = ingest_ticker(
+                    client, conn, ticker, from_date, to_date
                 )
-
-                # Summarise per-ticker results
-                for ticker, counts in results.items():
-                    log_lines.append(
-                        f"  {ticker}: aggs={counts['aggs']}, "
-                        f"splits={counts['splits']}, dividends={counts['dividends']}"
-                    )
-
-                progress(((i + 1) / total), desc=f"Fetching {leader}/{follower}...")
-                log_lines.append(f"Pair {leader}/{follower} complete.\n")
+                counts = ticker_results[ticker]
+                log_lines.append(
+                    f"  {ticker}: aggs={counts['aggs']}, "
+                    f"splits={counts['splits']}, dividends={counts['dividends']}"
+                )
+                progress(((i + 1) / total), desc=f"Fetching {ticker} ({i+1}/{total})...")
 
         except Exception as exc:
             log_lines.append(f"\nError during ingestion: {exc}")
             return "\n".join(log_lines)
 
-        log_lines.append("All pairs ingested successfully.")
+        log_lines.append("\nAll tickers ingested successfully.")
         return "\n".join(log_lines)
 
     # ------------------------------------------------------------------
@@ -229,20 +251,30 @@ def create_app(config: AppConfig) -> gr.Blocks:
         gr.Markdown("# Lead-Lag Quant")
 
         with gr.Tab("Pair Management"):
-            gr.Markdown("### Add Ticker Pair")
+            gr.Markdown("### Add Ticker Pairs")
+            gr.Markdown(
+                "Enter one **Leader** and one or more **Followers** (comma-separated). "
+                "All pairs are validated against Polygon before being saved."
+            )
             with gr.Row():
                 leader_input = gr.Textbox(
                     label="Leader Ticker",
                     placeholder="e.g., NVDA",
+                    scale=1,
                 )
-                follower_input = gr.Textbox(
-                    label="Follower Ticker",
-                    placeholder="e.g., CRWV",
+                followers_input = gr.Textbox(
+                    label="Follower Tickers (comma-separated)",
+                    placeholder="e.g., AMD, CRWV, TSM",
+                    scale=3,
                 )
             with gr.Row():
-                add_pair_btn = gr.Button("Add Pair", variant="primary")
+                add_pair_btn = gr.Button("Add Pairs", variant="primary")
                 refresh_btn = gr.Button("Refresh")
-            pair_status = gr.Textbox(label="Status", interactive=False)
+            pair_status = gr.Textbox(
+                label="Status",
+                interactive=False,
+                lines=6,
+            )
             pair_table = gr.Dataframe(
                 label="Active Pairs",
                 headers=["ID", "Leader", "Follower", "Created", "Active"],
@@ -250,8 +282,8 @@ def create_app(config: AppConfig) -> gr.Blocks:
             )
 
             add_pair_btn.click(
-                fn=add_pair,
-                inputs=[leader_input, follower_input],
+                fn=add_pairs_batch,
+                inputs=[leader_input, followers_input],
                 outputs=[pair_status, pair_table],
             )
             refresh_btn.click(fn=refresh_pairs, outputs=[pair_table])

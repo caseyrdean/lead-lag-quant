@@ -312,11 +312,12 @@ def auto_execute_signals(
                 signal_id=sig["signal_id"],
             )
 
-        except Exception:
-            log.exception(
+        except Exception as exc:
+            log.error(
                 "auto_execute_error",
                 signal_id=sig.get("signal_id"),
                 ticker=sig.get("ticker_b"),
+                error=str(exc)[:200],
             )
             continue
 
