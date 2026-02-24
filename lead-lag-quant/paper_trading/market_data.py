@@ -335,7 +335,7 @@ def get_performance_table(
     """
     try:
         positions = conn.execute(
-            "SELECT ticker, shares, avg_cost FROM paper_positions WHERE portfolio_id = ?",
+            "SELECT ticker, shares, avg_cost, current_price FROM paper_positions WHERE portfolio_id = ?",
             (portfolio_id,),
         ).fetchall()
 
@@ -344,11 +344,12 @@ def get_performance_table(
 
         data = []
         for pos in positions:
-            ticker = pos[0]
-            shares = float(pos[1])
-            avg_cost = float(pos[2])
+            ticker      = pos[0]
+            shares      = float(pos[1])
+            avg_cost    = float(pos[2])
+            live_price  = float(pos[3]) if pos[3] is not None else None
 
-            # Last two closes for this ticker
+            # Last two closes for daily return and fallback price
             closes = conn.execute(
                 """
                 SELECT adj_close FROM normalized_bars
@@ -359,17 +360,21 @@ def get_performance_table(
                 (ticker,),
             ).fetchall()
 
-            if not closes:
+            if not closes and live_price is None:
                 continue
 
-            last_close = float(closes[0][0])
+            last_close = float(closes[0][0]) if closes else live_price
             prev_close = float(closes[1][0]) if len(closes) > 1 else last_close
 
-            market_value = last_close * shares
-            total_ret_dollar = (last_close - avg_cost) * shares
-            total_ret_pct = (last_close - avg_cost) / avg_cost * 100 if avg_cost else 0.0
-            daily_ret_dollar = (last_close - prev_close) * shares
-            daily_ret_pct = (last_close - prev_close) / prev_close * 100 if prev_close else 0.0
+            # Total return uses live current_price (kept fresh by background poller),
+            # falling back to last_close from normalized_bars when unavailable.
+            current_price = live_price if live_price is not None else last_close
+
+            market_value      = current_price * shares
+            total_ret_dollar  = (current_price - avg_cost) * shares
+            total_ret_pct     = (current_price - avg_cost) / avg_cost * 100 if avg_cost else 0.0
+            daily_ret_dollar  = (last_close - prev_close) * shares
+            daily_ret_pct     = (last_close - prev_close) / prev_close * 100 if prev_close else 0.0
 
             data.append([
                 ticker,

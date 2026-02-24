@@ -86,11 +86,11 @@ def get_trade_stats(conn: sqlite3.Connection, portfolio_id: int = 1) -> dict:
     gross_wins = sum(wins)
     gross_losses = sum(losses)  # <= 0
 
-    profit_factor = gross_wins / abs(gross_losses) if gross_losses != 0 else float("inf")
+    profit_factor = gross_wins / abs(gross_losses) if gross_losses != 0 else 0.0
 
     avg_win = gross_wins / winning if winning > 0 else 0.0
     avg_loss = abs(gross_losses) / losing if losing > 0 else 0.0
-    payoff_ratio = avg_win / avg_loss if avg_loss != 0 else float("inf")
+    payoff_ratio = avg_win / avg_loss if avg_loss != 0 else 0.0
 
     best_trade = max(pnl_values)
     worst_trade = min(pnl_values)
