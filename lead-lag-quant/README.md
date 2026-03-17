@@ -2,7 +2,7 @@
 
 A quantitative pairs trading platform that detects when one stock statistically leads another and generates paper trading signals based on that relationship.
 
-The core idea: if Stock A consistently moves before Stock B does — measured across dozens of trading days — that predictive lag can be identified, scored, and traded. The platform handles the full pipeline from raw data ingestion through signal generation, paper trade execution, and performance analytics.
+The core idea: if Stock A consistently moves before Stock B does — measured across dozens of trading days — that predictive lag (or lead) can be identified, scored, and traded. The platform handles the full pipeline from raw data ingestion through signal generation, paper trade execution, and performance analytics.
 
 ---
 
