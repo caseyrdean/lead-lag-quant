@@ -45,6 +45,7 @@ def init_schema(conn: sqlite3.Connection) -> None:
             follower TEXT NOT NULL,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             is_active INTEGER NOT NULL DEFAULT 1,
+            reactivated_at TEXT,
             UNIQUE(leader, follower)
         );
 
@@ -186,5 +187,13 @@ def init_schema(conn: sqlite3.Connection) -> None:
             ON features_volatility(ticker);
     """)
     conn.commit()
+
+    # BUGFIX-04: idempotent migration for existing databases that lack the column
+    try:
+        conn.execute("ALTER TABLE ticker_pairs ADD COLUMN reactivated_at TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists — idempotent
+
     init_engine_schema(conn)
     init_paper_trading_schema(conn)
