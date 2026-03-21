@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Any seeded equity pair produces a reproducible, auditable full position spec backed by statistically validated lead-lag relationships -- and a paper trading simulator to validate those signals against real prices before committing capital.
-**Current focus:** Phase 6 - Backtesting and Analysis
+**Current focus:** Phase 6.1 complete (ENGINE-03 gap closure) — 48/48 v1.0 requirements met
 
 ## Current Position
 
@@ -14,7 +14,7 @@ Plan: 3 of 5 -- Plan 06-02 complete; starting 06-03
 Status: In Progress
 Last activity: 2026-03-21 -- Plan 06-02 complete: 3 React pages (Backtest, Lead-Lag Charts, Regime State), 5 components, 3 routes, 3 sidebar links; human verified
 
-Progress: [####################] 95%
+Progress: [####################] 100%
 
 ## Performance Metrics
 
@@ -108,6 +108,9 @@ Recent decisions affecting current work:
 - [06-01]: Signal date range filter (signal_date BETWEEN start AND end) is primary look-ahead bias control; stored returns already split-adjusted via Policy A
 - [06-01]: regime endpoint accepts leader param for API consistency but queries regime_states by follower (regime is follower-keyed)
 - [06-01]: max_drawdown returned as negative decimal using cumsum/cummax pattern from paper_trading/analytics.py
+- [06.1-01]: STABILITY_THRESHOLD raised 50.0 -> 70.0, CORRELATION_THRESHOLD raised 0.50 -> 0.65 — ENGINE-03 hard gate now enforced correctly
+- [06.1-01]: passes_gate changed from >= to strict > for both thresholds — boundary values (70.0, 0.65) correctly fail the gate
+- [06.1-01]: determine_sizing_tier refactored to one-argument (stability_score only); tier breakpoints at 85 (full) and 70 (half) using strict >
 
 ### Pending Todos
 
@@ -121,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-21
-Stopped at: Completed 06-02-PLAN.md (all 3 tasks done, human verified). Next: 06-03-PLAN.md.
-Resume file: .planning/phases/06-backtest-visualization/06-03-PLAN.md
+Stopped at: Completed 06.1-01-PLAN.md (ENGINE-03 gap closure). 48/48 v1.0 milestone requirements satisfied.
+Resume file: None — v1.0 milestone complete

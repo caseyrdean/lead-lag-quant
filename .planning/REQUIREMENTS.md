@@ -43,7 +43,7 @@
 
 - [ ] **ENGINE-01**: Optimal lag detected per pair as the lag offset with maximum stable cross-correlation
 - [ ] **ENGINE-02**: RSI-v2 stability score computed as composite of: lag persistence consistency + regime stability + rolling window confirmation + walk-forward OOS validation (non-overlapping estimation/gap/validation windows) + lag drift penalty → scalar 0–100
-- [ ] **ENGINE-03**: Hard threshold gate: signals only generated when stability_score > 70 AND correlation_strength > 0.65
+- [x] **ENGINE-03**: Hard threshold gate: signals only generated when stability_score > 70 AND correlation_strength > 0.65
 - [ ] **ENGINE-04**: Signals stored immutably in SQLite with full explainability payload: optimal_lag, window_length, correlation_strength, stability_score, regime_state, adjustment_policy_id, generated_at
 
 ### Regime & Distribution
@@ -148,7 +148,7 @@
 | FEAT-07 | Phase 3 | Pending |
 | ENGINE-01 | Phase 4 | Pending |
 | ENGINE-02 | Phase 4 | Pending |
-| ENGINE-03 | Phase 6.1 (gap closure) | Pending |
+| ENGINE-03 | Phase 6.1 (gap closure) | Complete |
 | ENGINE-04 | Phase 4 | Pending |
 | REGIME-01 | Phase 4 | Pending |
 | REGIME-02 | Phase 4 | Pending |
