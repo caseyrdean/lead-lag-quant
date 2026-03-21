@@ -138,7 +138,7 @@ Plans:
 
 Plans:
 - [x] 06-01-PLAN.md -- Backtest engine (backtest/engine.py), FastAPI routes (/api/backtest/run|xcorr|regime), and tests (BACKTEST-01, BACKTEST-02, BACKTEST-03)
-- [ ] 06-02-PLAN.md -- React pages: BacktestPage (UI-05), LeadLagChartsPage (UI-02), RegimeStatePage (UI-03), five components, three routes, sidebar links
+- [ ] 06-02-PLAN.md -- React pages: BacktestPage (UI-05), LeadLagChartsPage (UI-02), RegimeStatePage (UI-03), five components, three routes, sidebar links [Tasks 1-2 done; awaiting Task 3 human-verify]
 
 ## Progress
 
