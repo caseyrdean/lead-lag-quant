@@ -37,6 +37,7 @@ IMMUTABILITY: generated_at is set on first insert and NEVER overwritten on confl
 """
 import sqlite3
 from datetime import datetime, timezone
+import numpy as np
 import pandas as pd
 from utils.logging import get_logger
 
@@ -171,6 +172,153 @@ def compute_invalidation_threshold(
         return None
     mean_abs_return = float(df['return_1d'].abs().mean())
     return mean_abs_return * multiplier
+
+
+def compute_rs_slope(
+    conn: sqlite3.Connection,
+    ticker_a: str,
+    ticker_b: str,
+    lookback_sessions: int = 5,
+) -> float | None:
+    """Slope of the follower RS series over the last lookback_sessions, normalized by RS std dev.
+
+    Queries features_relative_strength for the pair, fetches 3x lookback rows
+    for a stable std dev, then computes np.polyfit slope on the last lookback_sessions
+    values in chronological order.
+
+    Returns:
+        slope / rs_std when rs_std > 0 and >= 10 full rows are available.
+        float(slope) un-normalized when fewer than 10 rows exist or rs_std == 0.
+        None when fewer than lookback_sessions rows are available.
+    """
+    fetch_limit = lookback_sessions * 3
+    df = pd.read_sql_query(
+        """
+        SELECT rs_value
+        FROM features_relative_strength
+        WHERE ticker_a=? AND ticker_b=?
+          AND rs_value IS NOT NULL
+        ORDER BY trading_day DESC
+        LIMIT ?
+        """,
+        conn,
+        params=(ticker_a, ticker_b, fetch_limit),
+    )
+    if df.empty or len(df) < lookback_sessions:
+        return None
+
+    # Reverse to chronological order; take the last lookback_sessions as the recent window
+    df = df.iloc[::-1].reset_index(drop=True)
+    recent = df['rs_value'].iloc[-lookback_sessions:].values
+
+    slope = np.polyfit(np.arange(len(recent)), recent, 1)[0]
+
+    # Normalize by std dev computed from the full fetched series (requires >= 10 rows)
+    if len(df) >= 10:
+        rs_std = float(df['rs_value'].std())
+        if rs_std > 0:
+            return float(slope / rs_std)
+    return float(slope)
+
+
+def compute_leader_baseline_return(
+    conn: sqlite3.Connection,
+    ticker_a: str,
+    optimal_lag: int,
+    lookback_days: int = 120,
+) -> float | None:
+    """Historical mean lagged return for the leader ticker over the last lookback_days.
+
+    Queries features_lagged_returns for ticker_a at lag=optimal_lag.
+    The date window is anchored at the MAX trading_day for that ticker.
+
+    Returns:
+        float mean of return_value, or None if no rows found.
+    """
+    anchor_row = conn.execute(
+        "SELECT MAX(trading_day) FROM features_lagged_returns WHERE ticker=? AND lag=?",
+        (ticker_a, optimal_lag),
+    ).fetchone()
+    anchor = anchor_row[0] if anchor_row else None
+    if anchor is None:
+        return None
+
+    df = pd.read_sql_query(
+        """
+        SELECT return_value
+        FROM features_lagged_returns
+        WHERE ticker=? AND lag=?
+          AND return_value IS NOT NULL
+          AND trading_day >= date(?, ?)
+        """,
+        conn,
+        params=(ticker_a, optimal_lag, anchor, f'-{lookback_days} days'),
+    )
+    if df.empty:
+        return None
+    return float(df['return_value'].mean())
+
+
+def compute_response_window(
+    conn: sqlite3.Connection,
+    ticker_a: str,
+    ticker_b: str,
+) -> float | None:
+    """Average number of trading sessions the pair spends in BUY state per cycle.
+
+    Scans signal_transitions for the pair in chronological order, identifies
+    complete BUY→non-BUY cycles, counts trading sessions (via normalized_bars)
+    for each complete cycle, and returns the mean.
+
+    Returns:
+        float mean session count if >= 2 complete BUY→exit cycles exist.
+        None on bootstrap (no history) or fewer than 2 complete cycles.
+    """
+    df = pd.read_sql_query(
+        """
+        SELECT to_action, transitioned_at
+        FROM signal_transitions
+        WHERE ticker_a=? AND ticker_b=?
+        ORDER BY transitioned_at ASC
+        """,
+        conn,
+        params=(ticker_a, ticker_b),
+    )
+    if df.empty:
+        return None
+
+    durations = []
+    buy_entry_at = None
+
+    for i, row in df.iterrows():
+        action = row['to_action']
+        ts = row['transitioned_at']
+        # Extract date portion only (strip time component)
+        date_part = ts[:10] if ts and len(ts) >= 10 else ts
+
+        if action == 'BUY':
+            if buy_entry_at is None:
+                buy_entry_at = date_part
+        else:
+            if buy_entry_at is not None:
+                # Complete BUY→exit cycle: count trading sessions for ticker_b
+                count_row = conn.execute(
+                    """
+                    SELECT COUNT(DISTINCT trading_day)
+                    FROM normalized_bars
+                    WHERE ticker=?
+                      AND trading_day > ?
+                      AND trading_day <= ?
+                    """,
+                    (ticker_b, buy_entry_at, date_part),
+                ).fetchone()
+                session_count = count_row[0] if count_row else 0
+                durations.append(session_count)
+                buy_entry_at = None
+
+    if len(durations) < 2:
+        return None
+    return float(sum(durations) / len(durations))
 
 
 def generate_signal(
