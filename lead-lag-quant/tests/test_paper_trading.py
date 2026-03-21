@@ -1,11 +1,13 @@
 """Tests for the paper trading engine core logic."""
 
 import sqlite3
+import threading
 from datetime import datetime, timezone
 
 import pytest
 
 from paper_trading.engine import (
+    auto_execute_signals,
     close_position,
     compute_share_quantity,
     get_portfolio_summary,
@@ -259,3 +261,37 @@ def test_duplicate_auto_execution_blocked(tmp_db):
             """,
             (signal_id, now),
         )
+
+
+# ---------------------------------------------------------------------------
+# BUGFIX-05: Concurrent auto-execution must not deadlock or raise
+# ---------------------------------------------------------------------------
+
+
+def test_concurrent_execute(tmp_db):
+    """Two threads calling auto_execute_signals concurrently must not deadlock.
+
+    With no unprocessed signals in the DB, each call returns immediately after
+    the lock is acquired. This confirms the lock is non-reentrant for distinct
+    threads and that both threads complete cleanly.
+    """
+    set_capital(tmp_db, 100_000)
+
+    errors: list[Exception] = []
+
+    def run():
+        try:
+            auto_execute_signals(tmp_db, "test_key")
+        except Exception as exc:  # noqa: BLE001
+            errors.append(exc)
+
+    t1 = threading.Thread(target=run)
+    t2 = threading.Thread(target=run)
+    t1.start()
+    t2.start()
+    t1.join(timeout=5)
+    t2.join(timeout=5)
+
+    assert not t1.is_alive(), "Thread 1 did not complete — possible deadlock"
+    assert not t2.is_alive(), "Thread 2 did not complete — possible deadlock"
+    assert errors == [], f"Unexpected exceptions from threads: {errors}"

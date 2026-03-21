@@ -5,6 +5,7 @@ for SQL operations. All timestamps are UTC ISO format.
 """
 
 import sqlite3
+import threading
 from datetime import datetime, timezone
 
 from paper_trading.db import (
@@ -17,6 +18,8 @@ from paper_trading.price_poller import fetch_snapshot_price
 from utils.logging import get_logger
 
 log = get_logger("paper_trading.engine")
+
+_execute_lock = threading.Lock()  # module-level singleton — serialises concurrent auto-execution
 
 # Sizing tier to capital fraction mapping (TRADE-02)
 SIZING_FRACTIONS: dict[str, float] = {
@@ -246,82 +249,86 @@ def auto_execute_signals(
     3. For each signal: fetch price for ticker_b (follower), compute shares,
        open position if shares > 0.
 
+    Serialised by _execute_lock to prevent double-spending cash on concurrent
+    API/timer callbacks (BUGFIX-05).
+
     Returns list of executed trade dicts.
     """
     from paper_trading.db import get_unprocessed_signals
 
-    portfolio = get_portfolio(conn, portfolio_id)
-    if portfolio is None:
-        raise ValueError("No portfolio found. Call set_capital() first.")
+    with _execute_lock:
+        portfolio = get_portfolio(conn, portfolio_id)
+        if portfolio is None:
+            raise ValueError("No portfolio found. Call set_capital() first.")
 
-    signals = get_unprocessed_signals(conn)
-    executed = []
+        signals = get_unprocessed_signals(conn)
+        executed = []
 
-    for sig in signals:
-        try:
-            ticker_b = sig["ticker_b"]
-            now = datetime.now(timezone.utc).isoformat()
+        for sig in signals:
+            try:
+                ticker_b = sig["ticker_b"]
+                now = datetime.now(timezone.utc).isoformat()
 
-            # Fetch current price for the follower ticker
-            price = fetch_snapshot_price(ticker_b, api_key)
-            if price is None:
-                log.warning(
-                    "auto_execute_skip_no_price",
-                    ticker=ticker_b, signal_id=sig["signal_id"],
+                # Fetch current price for the follower ticker
+                price = fetch_snapshot_price(ticker_b, api_key)
+                if price is None:
+                    log.warning(
+                        "auto_execute_skip_no_price",
+                        ticker=ticker_b, signal_id=sig["signal_id"],
+                    )
+                    continue
+
+                # Refresh portfolio state for current cash
+                portfolio = get_portfolio(conn, portfolio_id)
+                shares = compute_share_quantity(
+                    portfolio["starting_capital"],
+                    portfolio["cash_balance"],
+                    sig.get("sizing_tier", "half"),
+                    price,
+                )
+
+                if shares == 0:
+                    log.warning(
+                        "auto_execute_skip_insufficient_cash",
+                        ticker=ticker_b, signal_id=sig["signal_id"],
+                        cash_balance=portfolio["cash_balance"],
+                    )
+                    continue
+
+                open_or_add_position(
+                    conn,
+                    portfolio_id=portfolio_id,
+                    ticker=ticker_b,
+                    shares=shares,
+                    price=price,
+                    source_signal_id=sig["signal_id"],
+                    invalidation_threshold=sig.get("invalidation_threshold"),
+                    executed_at=now,
+                )
+
+                executed.append({
+                    "signal_id": sig["signal_id"],
+                    "ticker": ticker_b,
+                    "shares": shares,
+                    "price": price,
+                    "sizing_tier": sig.get("sizing_tier"),
+                })
+                log.info(
+                    "auto_execute_success",
+                    ticker=ticker_b, shares=shares, price=price,
+                    signal_id=sig["signal_id"],
+                )
+
+            except Exception as exc:
+                log.error(
+                    "auto_execute_error",
+                    signal_id=sig.get("signal_id"),
+                    ticker=sig.get("ticker_b"),
+                    error=str(exc)[:200],
                 )
                 continue
 
-            # Refresh portfolio state for current cash
-            portfolio = get_portfolio(conn, portfolio_id)
-            shares = compute_share_quantity(
-                portfolio["starting_capital"],
-                portfolio["cash_balance"],
-                sig.get("sizing_tier", "half"),
-                price,
-            )
-
-            if shares == 0:
-                log.warning(
-                    "auto_execute_skip_insufficient_cash",
-                    ticker=ticker_b, signal_id=sig["signal_id"],
-                    cash_balance=portfolio["cash_balance"],
-                )
-                continue
-
-            open_or_add_position(
-                conn,
-                portfolio_id=portfolio_id,
-                ticker=ticker_b,
-                shares=shares,
-                price=price,
-                source_signal_id=sig["signal_id"],
-                invalidation_threshold=sig.get("invalidation_threshold"),
-                executed_at=now,
-            )
-
-            executed.append({
-                "signal_id": sig["signal_id"],
-                "ticker": ticker_b,
-                "shares": shares,
-                "price": price,
-                "sizing_tier": sig.get("sizing_tier"),
-            })
-            log.info(
-                "auto_execute_success",
-                ticker=ticker_b, shares=shares, price=price,
-                signal_id=sig["signal_id"],
-            )
-
-        except Exception as exc:
-            log.error(
-                "auto_execute_error",
-                signal_id=sig.get("signal_id"),
-                ticker=sig.get("ticker_b"),
-                error=str(exc)[:200],
-            )
-            continue
-
-    return executed
+        return executed
 
 
 def get_portfolio_summary(
