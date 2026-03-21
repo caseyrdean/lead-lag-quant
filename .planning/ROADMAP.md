@@ -3,7 +3,8 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1–6.1 (shipped 2026-03-21) — see [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
-- ✅ **v1.1** — Phase 7 complete (shipped 2026-03-21)
+- ✅ **v1.1 Outperformance Signals** — Phase 7 (shipped 2026-03-21) — see [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
+- 📋 **v1.2** — Planned (run `/gsd:new-milestone` to define)
 
 ## Phases
 
@@ -23,24 +24,18 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 </details>
 
-### 🚧 v1.1 (In Progress / Planned)
+<details>
+<summary>✅ v1.1 Outperformance Signals (Phase 7) — SHIPPED 2026-03-21</summary>
 
-- [x] **Phase 7: Outperformance Signal Enhancement** — BUY/HOLD/SELL action classification, RS acceleration, response window, outperformance margin; backtest disaggregated by action — completed 2026-03-21
+- [x] Phase 7: Outperformance Signal Enhancement (4/4 plans) — completed 2026-03-21
 
-## Phase Details
+Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
-### Phase 7: Outperformance Signal Enhancement
-**Goal**: Signals indicate not just that a follower moves with the leader, but whether it is likely to outpace it — BUY/HOLD/SELL action classification, RS acceleration, response window, and outperformance margin added to signals; backtest engine validates outperformance by action
-**Depends on**: Phase 6 (consumes signals, features_lagged_returns, features_relative_strength)
-**Milestone**: v1.1
-**Requirements**: OUT-01, OUT-02, OUT-03, OUT-04, OUT-05, OUT-06
-**Plans**: 4 plans
+</details>
 
-Plans:
-- [x] 07-01-PLAN.md — SQLite schema migration: 5 new signals columns + signal_transitions table
-- [x] 07-02-PLAN.md — Signal generator: BUY/HOLD/SELL classifier + RS acceleration + outperformance margin + response window
-- [x] 07-03-PLAN.md — Pipeline scheduler poll interval + backtest per-action breakdown
-- [x] 07-04-PLAN.md — Tests: classify_action edge cases, helper None-safety, by_action backtest structure
+### 📋 v1.2 (Planned)
+
+- [ ] TBD — run `/gsd:new-milestone` to define
 
 ## Progress
 

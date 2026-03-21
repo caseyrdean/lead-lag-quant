@@ -2,11 +2,11 @@
 
 ## What This Is
 
-A local quantitative analytics application that ingests unadjusted equity data from Polygon.io, applies deterministic split-adjustment (Policy A), computes rolling cross-correlation lead-lag signals for user-seeded ticker pairs, generates full actionable position specs with strict confidence thresholds, validates signal quality through paper trading simulation and stored-data backtesting, and exposes a FastAPI backend with a React/Vite frontend dashboard.
+A local quantitative analytics application that ingests unadjusted equity data from Polygon.io, applies deterministic split-adjustment (Policy A), computes rolling cross-correlation lead-lag signals for user-seeded ticker pairs, generates full actionable position specs with strict confidence thresholds, validates signal quality through paper trading simulation and stored-data backtesting, and exposes a FastAPI backend with a React/Vite frontend dashboard. Signals now include BUY/HOLD/SELL action classification based on relative strength trajectory, with RS acceleration and outperformance margin vs the leader.
 
 ## Core Value
 
-Any seeded equity pair produces a complete, reproducible, auditable position spec — entry condition, expected target, invalidation rule, and sizing tier — backed by statistically validated lead-lag relationships and strict confidence thresholds.
+Any seeded equity pair produces a complete, reproducible, auditable position spec — entry condition, expected target, invalidation rule, and sizing tier — backed by statistically validated lead-lag relationships, strict confidence thresholds, and outperformance context showing whether the follower is likely to exceed the leader's return over the signal window.
 
 ## Requirements
 
@@ -25,9 +25,18 @@ Any seeded equity pair produces a complete, reproducible, auditable position spe
 - ✓ Backtest engine: stored-data only, no look-ahead bias, hit rate / Sharpe / drawdown metrics — v1.0
 - ✓ React/Vite frontend: Backtest, Lead-Lag Charts, Regime State, Signal Dashboard, Trading panels — v1.0
 
+### Validated (v1.1)
+
+- ✓ BUY/HOLD/SELL action classification on every gate-passing signal (SELL priority on declining RS, BUY on consistent positive or reversal, HOLD within RS volatility band) — v1.1
+- ✓ RS acceleration (follower slope normalized by pair std dev) + leader RS deceleration on every signal — v1.1
+- ✓ Outperformance margin (expected_target minus leader baseline return) + response window (mean BUY-state session duration) — v1.1
+- ✓ signal_transitions audit table logging every action state change with timestamp — v1.1
+- ✓ Pipeline scheduler reduced to 15-minute polling (from 30 min) — v1.1
+- ✓ Backtest disaggregated by action: BUY/HOLD/SELL/UNKNOWN each with hit_rate, Sharpe, drawdown, outperformance_vs_leader — v1.1
+
 ### Active
 
-(None yet — planning v1.1)
+(None — planning v1.2)
 
 ### Out of Scope
 
@@ -42,14 +51,16 @@ Any seeded equity pair produces a complete, reproducible, auditable position spe
 | Dynamic threshold auto-adjustment | Introduces hidden state; makes signals non-reproducible |
 | AWS Lambda / S3 / DynamoDB / Terraform | Descoped from v1.0 — local SQLite is sufficient for MVP validation |
 | Gradio UI | Removed in Phase 5.1-04; FastAPI + React is the production stack |
+| BUY/HOLD/SELL on Signal Dashboard UI | Deferred to v1.2 — data model must stabilize in v1.1 first |
+| Leader RS deceleration as hard gate | Kept as metadata only — informational, not a signal blocker |
 
 ## Context
 
 - **Data provider:** Polygon.io — unadjusted aggregate bars + /v3/reference/splits + /v3/reference/dividends
 - **Primary validated pair:** CoreWeave (CRWV) / Nvidia (NVDA) — CoreWeave lags Nvidia momentum turns by several sessions
-- **Tech stack:** Python (FastAPI, SQLite, scipy, statsmodels, pandas), React/Vite/TypeScript
+- **Tech stack:** Python (FastAPI, SQLite, scipy, statsmodels, pandas, numpy), React/Vite/TypeScript
 - **Regime rules:** Bullish RS > +5% for 10 sessions; Bearish RS < -7% for 5 sessions; ATR expansion > 130% of 20-day avg; distribution = down day volume > 150% 30-day avg or VWAP rejection × 3
-- **Current state:** v1.0 shipped 2026-03-21 — 48/48 requirements satisfied, 18 plans, ~10,500 Python LOC + ~2,500 TypeScript LOC
+- **Current state:** v1.1 shipped 2026-03-21 — 22 plans total, ~10,500 Python LOC + ~2,500 TypeScript LOC; 183 tests passing
 - **Known issues:** 2 pre-existing test failures in test_engine_detector.py (insufficient days / null correlation edge cases) — documented, not blocking
 
 ## Constraints
@@ -58,7 +69,7 @@ Any seeded equity pair produces a complete, reproducible, auditable position spe
 - **Adjustment policy:** Policy A is canonical default — split-adjust only, dividends never in returns; policy ID propagated through all tables and signals
 - **Signal quality:** Hard minimums — stability_score > 70, correlation_strength > 0.65; no exceptions
 - **Reproducibility:** Every signal must be reproducible from stored SQLite data alone
-- **Execution model:** Local application; no cloud infrastructure in v1.0
+- **Execution model:** Local application; no cloud infrastructure in v1.0/v1.1
 
 ## Key Decisions
 
@@ -74,6 +85,11 @@ Any seeded equity pair produces a complete, reproducible, auditable position spe
 | reload=False in uvicorn.run | Background threads (PipelineScheduler, BackgroundPricePoller) incompatible with reload | ✓ Good — critical for stability |
 | run_coroutine_threadsafe for WebSocket broadcast | Thread-safe cross-thread coroutine scheduling from background threads | ✓ Good |
 | INNER JOIN ticker_pairs WHERE is_active=1 as standard signal query pattern | Soft-deleted pairs must never appear in signal results | ✓ Good — standard pattern enforced |
+| SELL priority before BUY in classify_action | Positive-but-declining RS is a warning signal; BUY requires non-declining positive RS | ✓ Good — catches deteriorating pairs that would otherwise trigger false BUY |
+| classify_action as pure function (no DB calls) | Testability — takes pre-computed rs_series, rs_std, rs_mean | ✓ Good — enables parametrized unit tests without DB fixtures |
+| All 5 new signal columns nullable | Sparse-history pairs must not crash on insert | ✓ Good — prevents ProgrammingError on new pairs |
+| signal_transitions dedup guard | Log only on action state change; no HOLD→HOLD spam | ✓ Good — keeps audit table clean |
+| by_action always returns all 4 keys | Prevents future KeyError in UI consumers even with 0-trade buckets | ✓ Good — defensive by design |
 
 ---
-*Last updated: 2026-03-21 after v1.0 milestone*
+*Last updated: 2026-03-21 after v1.1 milestone*

@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.1 Outperformance Signals — Shipped 2026-03-21
+
+**Phases:** 7 (1 phase, 4 plans)
+**Requirements:** 6/6 satisfied (OUT-01 through OUT-06)
+
+**Delivered:** BUY/HOLD/SELL action classification, RS acceleration, outperformance margin, and response window added to every gate-passing signal; backtest disaggregated by action with outperformance_vs_leader; pipeline polls every 15 minutes; signal_transitions audit table tracks all state changes.
+
+**Key Accomplishments:**
+1. `classify_action` pure function: SELL fires first on declining RS, BUY on consistent positive or reversal (3+ sessions), HOLD within ±1 std dev RS band
+2. 5 new nullable signal fields wired end-to-end: schema → generator → upsert → backtest
+3. `signal_transitions` audit table: one row per action state change, timestamped, no duplicates
+4. `run_backtest()` returns `by_action` dict — BUY/HOLD/SELL/UNKNOWN each with hit_rate, Sharpe, drawdown, outperformance_vs_leader
+5. 20 new tests; full suite 183 passing, 0 regressions
+
+**Archives:**
+- [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) — phase details and decisions
+- [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) — all 6 OUT-* requirements with traceability
+
 ## v1.0 MVP — Shipped 2026-03-21
 
 **Phases:** 1–6.1 (8 phases, 18 plans)
