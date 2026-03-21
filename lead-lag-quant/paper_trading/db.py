@@ -122,16 +122,21 @@ def get_unprocessed_signals(conn: sqlite3.Connection) -> list[dict]:
     Uses NOT EXISTS for idempotent auto-execution detection.
     """
     sql = """
-        SELECT rowid AS signal_id, ticker_a, ticker_b, signal_date,
-               direction, sizing_tier, invalidation_threshold, expected_target
-        FROM signals
-        WHERE signal_date >= date('now', '-7 days')
+        SELECT s.rowid AS signal_id, s.ticker_a, s.ticker_b, s.signal_date,
+               s.direction, s.sizing_tier, s.invalidation_threshold, s.expected_target
+        FROM signals s
+        INNER JOIN ticker_pairs tp
+            ON tp.leader = s.ticker_a
+            AND tp.follower = s.ticker_b
+            AND tp.is_active = 1
+        WHERE s.signal_date >= date('now', '-7 days')
           AND NOT EXISTS (
               SELECT 1 FROM paper_trades
-              WHERE paper_trades.source_signal_id = signals.rowid
+              WHERE paper_trades.source_signal_id = s.rowid
                 AND paper_trades.side = 'buy'
           )
-        ORDER BY generated_at DESC
+          AND (tp.reactivated_at IS NULL OR s.generated_at >= tp.reactivated_at)
+        ORDER BY s.generated_at DESC
     """
     rows = conn.execute(sql).fetchall()
     return [dict(r) for r in rows]
