@@ -37,7 +37,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Plans**: 4 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — SQLite schema migration: 5 new signals columns + signal_transitions table
+- [x] 07-01-PLAN.md — SQLite schema migration: 5 new signals columns + signal_transitions table
 - [ ] 07-02-PLAN.md — Signal generator: BUY/HOLD/SELL classifier + RS acceleration + outperformance margin + response window
 - [ ] 07-03-PLAN.md — Pipeline scheduler poll interval + backtest per-action breakdown
 - [ ] 07-04-PLAN.md — Tests: classify_action edge cases, helper None-safety, by_action backtest structure
@@ -54,4 +54,4 @@ Plans:
 | 5.1. API Security & Data Integrity Fixes | v1.0 | 4/4 | Complete | 2026-03-21 |
 | 6. Backtest & Visualization | v1.0 | 2/2 | Complete | 2026-03-21 |
 | 6.1. Signal Gate Threshold Fix | v1.0 | 1/1 | Complete | 2026-03-21 |
-| 7. Outperformance Signal Enhancement | v1.1 | 0/4 | Not started | - |
+| 7. Outperformance Signal Enhancement | v1.1 | 1/4 | In progress | - |
