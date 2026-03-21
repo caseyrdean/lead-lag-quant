@@ -10,10 +10,10 @@ See: .planning/PROJECT.md (updated 2026-03-21 after v1.0 milestone)
 ## Current Position
 
 Phase: 07-outperformance-signal-enhancement
-Status: In progress — plan 03 complete
-Last activity: 2026-03-21 — 07-03 scheduler poll interval reduced to 15 min; run_backtest() per-action by_action breakdown added
+Status: Complete — all 4 plans done
+Last activity: 2026-03-21 — 07-04 Phase 7 test suite: classify_action, helper None-safety, transition dedup, by_action/outperformance_vs_leader
 
-Progress: [####################] In v1.1 (3/4 plans complete)
+Progress: [####################] v1.1 complete (4/4 plans complete)
 
 ## Performance Metrics
 
@@ -35,7 +35,7 @@ Progress: [####################] In v1.1 (3/4 plans complete)
 | 05.1-api-security-data-integrity-fixes | 4 | Complete 2026-03-21 |
 | 06-backtest-visualization | 2 | Complete 2026-03-21 |
 | 06.1-signal-gate-threshold-fix | 1 | Complete 2026-03-21 |
-| 07-outperformance-signal-enhancement | 1/4 | In progress 2026-03-21 |
+| 07-outperformance-signal-enhancement | 4/4 | Complete 2026-03-21 |
 
 ## Accumulated Context
 
@@ -59,6 +59,11 @@ All decisions logged in PROJECT.md Key Decisions table.
 - outperformance_vs_leader falls back to 0.0 (not None) when no leader return data available for a group
 - Leader return uses same (leader, signal_date, optimal_lag) key as follower — consistent with BACKTEST-01 (SQLite-only)
 
+**07-04 (2026-03-21):**
+- Transition logging tests use generate_signal directly with tmp_db fixture (avoids mocking the dedup path)
+- classify_action edge cases tested as standalone functions; parametrize covers standard cases only
+- by_action NULL action test omits action column on INSERT; COALESCE in engine SQL maps NULL to UNKNOWN
+
 ### Pending Todos
 
 None.
@@ -70,5 +75,5 @@ None — v1.0 complete at 48/48 requirements.
 ## Session Continuity
 
 Last session: 2026-03-21
-Stopped at: Completed 07-03-PLAN.md — scheduler poll interval + per-action backtest breakdown done; ready for 07-04 (tests).
+Stopped at: Completed 07-04-PLAN.md — Phase 7 test suite complete; all 4 plans done.
 Resume file: none
