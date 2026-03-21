@@ -148,7 +148,7 @@
 | FEAT-07 | Phase 3 | Pending |
 | ENGINE-01 | Phase 4 | Pending |
 | ENGINE-02 | Phase 4 | Pending |
-| ENGINE-03 | Phase 4 | Pending |
+| ENGINE-03 | Phase 6.1 (gap closure) | Pending |
 | ENGINE-04 | Phase 4 | Pending |
 | REGIME-01 | Phase 4 | Pending |
 | REGIME-02 | Phase 4 | Pending |

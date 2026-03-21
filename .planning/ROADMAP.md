@@ -125,6 +125,20 @@ Plans:
 - [x] 05.1-03-PLAN.md -- WebSocket broadcast reliability via run_coroutine_threadsafe (BUGFIX-08)
 - [x] 05.1-04-PLAN.md -- Remove Gradio UI (delete ui/, remove gradio dep, repurpose main.py to launch FastAPI via uvicorn)
 
+### Phase 6.1: Signal Gate Threshold Fix (INSERTED)
+**Goal**: ENGINE-03 hard gate thresholds corrected to match the milestone spec — signals generated only when stability_score > 70 AND correlation_strength > 0.65; pre-existing test failures in test_signals_generator.py resolved
+**Depends on**: Phase 4 (signals/generator.py fix)
+**Requirements**: ENGINE-03
+**Gap Closure:** Closes ENGINE-03 gap from v1.0 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. `signals/generator.py` has `STABILITY_THRESHOLD = 70.0` and `CORRELATION_THRESHOLD = 0.65`
+  2. `test_signals_generator.py` passes with no failures (12 pre-existing failures resolved)
+  3. No regression in other passing tests
+**Plans:** 0 plans
+
+Plans:
+- [ ] 06.1-01-PLAN.md -- Fix STABILITY_THRESHOLD/CORRELATION_THRESHOLD in signals/generator.py, fix test_signals_generator.py
+
 ### Phase 6: Backtest & Visualization
 **Goal**: Users can validate historical signal quality through stored-data backtesting and explore lead-lag relationships, regime state, and backtest results through dedicated visualization panels
 **Depends on**: Phase 4 (backtest needs signals and features; visualization needs all upstream data)
@@ -154,3 +168,4 @@ Phases execute in numeric order: 1 --> 2 --> 3 --> 4 --> 5 --> 6
 | 5. Paper Trading Simulation | 2/2 | Complete | 2026-02-19 |
 | 5.1. API Security & Data Integrity Fixes | 4/4 | Complete | 2026-03-21 |
 | 6. Backtest & Visualization | 2/2 | Complete | 2026-03-21 |
+| 6.1. Signal Gate Threshold Fix | 0/1 | Pending | — |
