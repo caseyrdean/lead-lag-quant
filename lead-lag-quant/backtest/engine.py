@@ -9,11 +9,75 @@ BACKTEST-03: Returns hit_rate, mean_return_per_trade, annualized_sharpe, max_dra
 import math
 import sqlite3
 
+import numpy as np
 import pandas as pd
 
 from utils.logging import get_logger
 
 log = get_logger("backtest.engine")
+
+
+def _compute_action_metrics(trade_pairs: list) -> dict:
+    """Compute backtest metrics for one action group.
+
+    Args:
+        trade_pairs: List of (follower_return, leader_return) tuples for one action.
+
+    Returns:
+        Dict with total_trades, winning_trades, hit_rate, mean_return,
+        annualized_sharpe, max_drawdown, outperformance_vs_leader.
+        Returns zero-dict on empty input.
+    """
+    ZERO = {
+        'total_trades': 0,
+        'winning_trades': 0,
+        'hit_rate': 0.0,
+        'mean_return': 0.0,
+        'annualized_sharpe': 0.0,
+        'max_drawdown': 0.0,
+        'outperformance_vs_leader': 0.0,
+    }
+    if not trade_pairs:
+        return ZERO
+
+    follower_returns = [p[0] for p in trade_pairs if p[0] is not None]
+
+    if not follower_returns:
+        return ZERO
+
+    total = len(follower_returns)
+    wins = sum(1 for r in follower_returns if r > 0)
+
+    series = pd.Series(follower_returns)
+    mean = series.mean()
+    std = series.std()
+
+    # Sharpe: annualized using sqrt(252) — matches existing run_backtest formula
+    annualized_sharpe = float((mean / std) * math.sqrt(252)) if std != 0 else 0.0
+
+    # Max drawdown: cumsum → cummax pattern — matches existing run_backtest formula
+    cumulative = series.cumsum()
+    running_peak = cumulative.cummax()
+    drawdown = (cumulative - running_peak) / running_peak.replace(0, float('nan'))
+    max_drawdown_raw = float(drawdown.min()) if not drawdown.isna().all() else 0.0
+    max_drawdown = min(max_drawdown_raw, 0.0)
+
+    # outperformance_vs_leader: mean(follower - leader) for pairs where leader return is available
+    paired = [(f, l) for f, l in zip(
+        follower_returns,
+        [p[1] for p in trade_pairs if p[0] is not None],
+    ) if l is not None]
+    outperformance = float(np.mean([f - l for f, l in paired])) if paired else 0.0
+
+    return {
+        'total_trades': total,
+        'winning_trades': wins,
+        'hit_rate': wins / total if total > 0 else 0.0,
+        'mean_return': float(mean),
+        'annualized_sharpe': annualized_sharpe,
+        'max_drawdown': max_drawdown,
+        'outperformance_vs_leader': outperformance,
+    }
 
 
 def run_backtest(
@@ -42,9 +106,19 @@ def run_backtest(
     Returns:
         Dict with keys: leader, follower, start_date, end_date, total_trades,
         winning_trades, hit_rate, mean_return_per_trade, annualized_sharpe,
-        max_drawdown. All numeric metrics are 0.0 and total_trades=0 when no
-        signals are found in the date range.
+        max_drawdown, by_action. All numeric metrics are 0.0 and total_trades=0
+        when no signals are found in the date range. by_action always contains
+        BUY/HOLD/SELL/UNKNOWN keys; missing action groups return zero sub-dicts.
     """
+    _zero_action = {
+        'total_trades': 0,
+        'winning_trades': 0,
+        'hit_rate': 0.0,
+        'mean_return': 0.0,
+        'annualized_sharpe': 0.0,
+        'max_drawdown': 0.0,
+        'outperformance_vs_leader': 0.0,
+    }
     zero = {
         "leader": leader,
         "follower": follower,
@@ -56,12 +130,13 @@ def run_backtest(
         "mean_return_per_trade": 0.0,
         "annualized_sharpe": 0.0,
         "max_drawdown": 0.0,
+        "by_action": {k: dict(_zero_action) for k in ['BUY', 'HOLD', 'SELL', 'UNKNOWN']},
     }
 
     # BACKTEST-02: signal_date range filter is the primary look-ahead bias control
     rows = conn.execute(
         """
-        SELECT signal_date, optimal_lag
+        SELECT signal_date, optimal_lag, COALESCE(action, 'UNKNOWN') as action
         FROM signals
         WHERE ticker_a = ?
           AND ticker_b = ?
@@ -82,9 +157,11 @@ def run_backtest(
         return zero
 
     trade_returns = []
+    action_trade_tuples = []  # list of (follower_return, leader_return, action)
     for row in rows:
         signal_date = row[0]
         optimal_lag = row[1]
+        action = row[2]
 
         if optimal_lag is None:
             continue
@@ -106,7 +183,20 @@ def run_backtest(
             # Missing return data — skip this signal (not a bias; data simply absent)
             continue
 
-        trade_returns.append(ret_row[0])
+        follower_return = ret_row[0]
+        trade_returns.append(follower_return)
+
+        # Fetch leader return for outperformance_vs_leader calculation
+        leader_row = conn.execute(
+            """
+            SELECT return_value FROM features_lagged_returns
+            WHERE ticker=? AND trading_day=? AND lag=?
+            """,
+            (leader, signal_date, optimal_lag),
+        ).fetchone()
+        leader_return = leader_row[0] if leader_row and leader_row[0] is not None else None
+
+        action_trade_tuples.append((follower_return, leader_return, action))
 
     if not trade_returns:
         return zero
@@ -132,6 +222,12 @@ def run_backtest(
     # Ensure the value is negative (or 0.0); drawdown formula already produces <= 0
     max_drawdown = min(max_drawdown_raw, 0.0)
 
+    # Assemble per-action breakdown — always contains all 4 keys
+    by_action = {}
+    for action_key in ['BUY', 'HOLD', 'SELL', 'UNKNOWN']:
+        group = [(f, l) for f, l, a in action_trade_tuples if a == action_key]
+        by_action[action_key] = _compute_action_metrics(group)
+
     log.info(
         "backtest_complete",
         leader=leader,
@@ -151,6 +247,7 @@ def run_backtest(
         "mean_return_per_trade": mean_return_per_trade,
         "annualized_sharpe": annualized_sharpe,
         "max_drawdown": max_drawdown,
+        "by_action": by_action,
     }
 
 
