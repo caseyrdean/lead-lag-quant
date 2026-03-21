@@ -63,6 +63,21 @@ def init_engine_schema(conn: sqlite3.Connection) -> None:
             PRIMARY KEY (ticker_a, ticker_b)
         );
     """)
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS signal_transitions (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker_a        TEXT NOT NULL,
+            ticker_b        TEXT NOT NULL,
+            signal_date     TEXT NOT NULL,
+            from_action     TEXT,
+            to_action       TEXT NOT NULL,
+            transitioned_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_transitions_pair
+            ON signal_transitions(ticker_a, ticker_b);
+        CREATE INDEX IF NOT EXISTS idx_transitions_signal
+            ON signal_transitions(ticker_a, ticker_b, signal_date);
+    """)
     conn.commit()
     # Migration: add data_warning column if this DB was created before this version
     try:
@@ -70,6 +85,16 @@ def init_engine_schema(conn: sqlite3.Connection) -> None:
         conn.commit()
     except Exception:
         pass  # Column already exists
+    # Migration: add outperformance signal enhancement columns (v1.1)
+    try:
+        conn.execute("ALTER TABLE signals ADD COLUMN action TEXT")
+        conn.execute("ALTER TABLE signals ADD COLUMN response_window REAL")
+        conn.execute("ALTER TABLE signals ADD COLUMN rs_acceleration REAL")
+        conn.execute("ALTER TABLE signals ADD COLUMN leader_rs_deceleration REAL")
+        conn.execute("ALTER TABLE signals ADD COLUMN outperformance_margin REAL")
+        conn.commit()
+    except Exception:
+        pass  # Columns already exist
 
 
 def upsert_signal(conn: sqlite3.Connection, signal: dict) -> None:
@@ -85,27 +110,36 @@ def upsert_signal(conn: sqlite3.Connection, signal: dict) -> None:
             correlation_strength, stability_score,
             regime_state, adjustment_policy_id,
             direction, expected_target, invalidation_threshold,
-            sizing_tier, flow_map_entry, data_warning, generated_at
+            sizing_tier, flow_map_entry, data_warning, generated_at,
+            action, response_window, rs_acceleration,
+            leader_rs_deceleration, outperformance_margin
         ) VALUES (
             :ticker_a, :ticker_b, :signal_date,
             :optimal_lag, :window_length,
             :correlation_strength, :stability_score,
             :regime_state, :adjustment_policy_id,
             :direction, :expected_target, :invalidation_threshold,
-            :sizing_tier, :flow_map_entry, :data_warning, :generated_at
+            :sizing_tier, :flow_map_entry, :data_warning, :generated_at,
+            :action, :response_window, :rs_acceleration,
+            :leader_rs_deceleration, :outperformance_margin
         )
         ON CONFLICT(ticker_a, ticker_b, signal_date) DO UPDATE SET
-            optimal_lag           = excluded.optimal_lag,
-            window_length         = excluded.window_length,
-            correlation_strength  = excluded.correlation_strength,
-            stability_score       = excluded.stability_score,
-            regime_state          = excluded.regime_state,
-            direction             = excluded.direction,
-            expected_target       = excluded.expected_target,
+            optimal_lag            = excluded.optimal_lag,
+            window_length          = excluded.window_length,
+            correlation_strength   = excluded.correlation_strength,
+            stability_score        = excluded.stability_score,
+            regime_state           = excluded.regime_state,
+            direction              = excluded.direction,
+            expected_target        = excluded.expected_target,
             invalidation_threshold = excluded.invalidation_threshold,
-            sizing_tier           = excluded.sizing_tier,
-            flow_map_entry        = excluded.flow_map_entry,
-            data_warning          = excluded.data_warning
+            sizing_tier            = excluded.sizing_tier,
+            flow_map_entry         = excluded.flow_map_entry,
+            data_warning           = excluded.data_warning,
+            action                 = excluded.action,
+            response_window        = excluded.response_window,
+            rs_acceleration        = excluded.rs_acceleration,
+            leader_rs_deceleration = excluded.leader_rs_deceleration,
+            outperformance_margin  = excluded.outperformance_margin
             -- generated_at intentionally EXCLUDED from SET: immutability anchor
     """
     conn.execute(sql, signal)

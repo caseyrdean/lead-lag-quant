@@ -227,6 +227,12 @@ def generate_signal(
         'flow_map_entry': flow_map_entry,
         'data_warning': data_warning,
         'generated_at': datetime.now(timezone.utc).isoformat(),
+        # Outperformance signal enhancement fields (v1.1) — populated by plan 07-02
+        'action': None,
+        'response_window': None,
+        'rs_acceleration': None,
+        'leader_rs_deceleration': None,
+        'outperformance_margin': None,
     }
 
     from leadlag_engine.db import upsert_signal, upsert_flow_map
