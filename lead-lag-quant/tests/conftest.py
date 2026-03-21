@@ -36,21 +36,27 @@ def app_config(tmp_path):
 
 @pytest.fixture
 def api_client(tmp_db, app_config):
-    """Create a FastAPI TestClient with in-memory test DB and config wired in.
+    """Create a FastAPI TestClient with in-memory test DB and config injected.
 
-    deps.py resolves conn/config/client from request.app.state, so setting
-    app.state before yielding the TestClient propagates correctly through
-    all route handlers.
+    Uses app.dependency_overrides to replace the get_conn and get_config
+    dependency functions from api.deps so that route handlers receive the
+    test fixtures instead of the real lifespan-managed resources.
+    TestClient(app, raise_server_exceptions=False) is used with
+    lifespan="off" to avoid triggering the real DB/scheduler startup.
 
     Yields:
         fastapi.testclient.TestClient instance ready for API tests.
     """
     from api.main import app
+    from api import deps
 
-    app.state.conn = tmp_db
-    app.state.config = app_config
-    app.state.client = None
-    app.state.ws_manager = None
+    # Override dependency callables so route handlers use test fixtures
+    app.dependency_overrides[deps.get_conn] = lambda: tmp_db
+    app.dependency_overrides[deps.get_config] = lambda: app_config
+    app.dependency_overrides[deps.get_client] = lambda: None
 
-    with TestClient(app) as client:
+    with TestClient(app, raise_server_exceptions=True) as client:
         yield client
+
+    # Clean up overrides after the test
+    app.dependency_overrides.clear()
