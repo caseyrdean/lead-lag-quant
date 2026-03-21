@@ -1,6 +1,7 @@
 """Ticker pair CRUD endpoints."""
 
 import sqlite3
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel
@@ -84,10 +85,11 @@ def add_pairs(
             results.append({"ticker": follower, "status": "added"})
             added += 1
         except sqlite3.IntegrityError:
+            now_utc = datetime.now(timezone.utc).isoformat()
             cursor = conn.execute(
-                "UPDATE ticker_pairs SET is_active = 1 "
+                "UPDATE ticker_pairs SET is_active = 1, reactivated_at = ? "
                 "WHERE leader = ? AND follower = ? AND is_active = 0",
-                (leader, follower),
+                (now_utc, leader, follower),
             )
             conn.commit()
             if cursor.rowcount > 0:
