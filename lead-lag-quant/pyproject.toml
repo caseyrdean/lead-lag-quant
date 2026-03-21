@@ -9,7 +9,6 @@ dependencies = [
     "structlog",
     "exchange-calendars",
     "pyrate-limiter",
-    "gradio",
     "python-dotenv",
     "scipy>=1.13",
     "statsmodels>=0.14",
@@ -18,12 +17,15 @@ dependencies = [
     "pandas-market-calendars>=5.3",
     "matplotlib>=3.10.8",
     "plotly>=6.5.2",
+    "fastapi",
+    "uvicorn[standard]",
 ]
 
 [dependency-groups]
 dev = [
     "pytest",
     "pytest-cov",
+    "httpx",
 ]
 
 [tool.pytest.ini_options]
