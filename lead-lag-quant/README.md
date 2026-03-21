@@ -2,7 +2,7 @@
 
 A quantitative pairs trading platform that detects when one stock statistically leads another and generates paper trading signals based on that relationship.
 
-The core idea: if Stock A consistently moves before Stock B does — measured across dozens of trading days — that predictive lag can be identified, scored, and traded. The platform handles the full pipeline from raw data ingestion through signal generation, paper trade execution, and performance analytics.
+The core idea: if Stock A consistently moves before Stock B does — measured across dozens of trading days — that predictive lag (or lead) can be identified, scored, and traded. The platform handles the full pipeline from raw data ingestion through signal generation, paper trade execution, and performance analytics.
 
 ---
 
@@ -10,7 +10,7 @@ The core idea: if Stock A consistently moves before Stock B does — measured ac
 
 **Data layer.** Pulls unadjusted OHLCV bars, stock splits, and dividends from Polygon.io for every pair you register. Split adjustments are applied backwards (Policy A) so closing prices are historically consistent. Multi-period returns (1d, 5d, 10d, 20d, 60d) are computed and stored.
 
-**Feature engineering.** Each ticker's returns are residualized against SPY to strip out the broad market factor. Rolling 60-day cross-correlations are computed at lags -5 to +5 trading sessions with Bonferroni correction (alpha 0.05 across 11 tests) to control false positives.
+**Feature engineering.** Each ticker's returns are residualized against Lead to strip out the broad market factor. Rolling 60-day cross-correlations are computed at lags -5 to +5 trading sessions with Bonferroni correction (alpha 0.05 across 11 tests) to control false positives.
 
 **Lead-lag detection.** For each pair, the optimal lag is identified from the stored correlations. A five-component stability score (0-100) is computed from lag persistence, walk-forward out-of-sample performance, rolling confirmation, regime stability, and lag drift.
 
@@ -71,7 +71,7 @@ Work through the tabs left to right:
 
 1. **Pair Management** — Add leader and follower tickers. Both are validated against Polygon before being saved. You can add multiple followers at once with a comma-separated list.
 
-2. **Data Ingestion** — Set a date range and fetch OHLCV data for all active pairs. SPY is always fetched as a benchmark. Progress updates per ticker.
+2. **Data Ingestion** — Set a date range and fetch OHLCV data for all active pairs. Lead is always fetched as a benchmark. Progress updates per ticker.
 
 3. **Normalize** — Apply split adjustments and compute multi-period returns. Safe to re-run at any time.
 
@@ -94,7 +94,7 @@ ingestion_massive/      — fetch and store raw OHLCV, splits, dividends
     |
 normalization/          — split-adjust bars, compute returns
     |
-features/               — SPY residualization, rolling cross-correlations
+features/               — Lead residualization, rolling cross-correlations
     |
 leadlag_engine/         — optimal lag detection, stability scoring, signal gating
     |
@@ -133,4 +133,4 @@ The invalidation threshold is set at twice the mean absolute 1-day return of the
 - The minimum useful history is around 60 trading days per pair. Stability scores are most meaningful above 120 days.
 - Price updates are not tick-level. During market hours, position prices refresh every 60 seconds via the Polygon snapshot endpoint. Outside market hours, the most recent closing price from the database is used.
 - No slippage or commissions are modeled in the paper trading simulation.
-- SPY is required as a benchmark for residualization. If SPY data is missing, feature computation will fail.
+- Lead is required as a benchmark for residualization. If Lead data is missing, feature computation will fail.
