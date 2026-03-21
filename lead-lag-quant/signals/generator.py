@@ -259,6 +259,65 @@ def compute_leader_baseline_return(
     return float(df['return_value'].mean())
 
 
+SELL_CONFIRMATION_SESSIONS = 3
+
+
+def classify_action(
+    rs_series: pd.Series,
+    rs_std: float,
+    rs_mean: float,
+    n_sessions: int = 3,
+) -> str:
+    """Classify the current trade action as BUY, SELL, or HOLD.
+
+    Logic evaluated in priority order (first match wins):
+
+    1. Insufficient data  -> HOLD
+    2. BUY condition 1    -> recent n sessions all positive RS
+    3. BUY condition 2    -> reversal: prior session was negative AND recent n all positive
+       (condition 1 is checked first, so condition 2 only applies as a stricter reversal gate)
+    4. SELL condition     -> 3 consecutive declining RS sessions (diffs all negative)
+    5. HOLD               -> last RS within ±1 std dev of the pair's historical RS mean
+    6. Default            -> HOLD
+
+    Args:
+        rs_series: Full RS series for the pair (chronological, oldest first).
+        rs_std:    Standard deviation of the RS series (pair's historical volatility).
+        rs_mean:   Mean of the RS series (pair's historical RS baseline).
+        n_sessions: Look-back window for BUY/SELL conditions (default 3).
+
+    Returns:
+        'BUY', 'SELL', or 'HOLD'.
+    """
+    if len(rs_series) < n_sessions:
+        return 'HOLD'
+
+    recent = rs_series.iloc[-n_sessions:]
+
+    # SELL condition: 3 consecutive sessions of declining RS (checked before BUY —
+    # a positive-but-declining series is a warning signal, not a buy)
+    diffs = recent.diff().dropna()
+    if len(diffs) == n_sessions - 1 and (diffs < 0).all():
+        return 'SELL'
+
+    # BUY condition 1: consistent outperformance — all recent RS > 0
+    if (recent > 0).all():
+        return 'BUY'
+
+    # BUY condition 2: reversal — prior session was negative, recent all positive
+    if len(rs_series) >= n_sessions + 1:
+        pre_reversal = rs_series.iloc[-(n_sessions + 1)]
+        if pre_reversal < 0 and (recent > 0).all():
+            return 'BUY'
+
+    # HOLD: current RS within ±1 std dev of the pair's historical RS mean
+    current_rs = rs_series.iloc[-1]
+    if abs(current_rs - rs_mean) <= rs_std:
+        return 'HOLD'
+
+    return 'HOLD'
+
+
 def compute_response_window(
     conn: sqlite3.Connection,
     ticker_a: str,
@@ -340,6 +399,15 @@ def generate_signal(
     adjustment_policy_id is always 'policy_a' -- locked decision.
     generated_at is set once at creation; the upsert in leadlag_engine/db.py
     ensures it is NEVER overwritten if the signal already exists.
+
+    v1.1 outperformance fields computed when gate passes:
+      action              — BUY/HOLD/SELL from classify_action
+      rs_acceleration     — pair RS slope normalized by RS std dev (follower momentum)
+      leader_rs_deceleration — leader forward-return slope (negative = decelerating)
+      outperformance_margin  — expected_target minus leader_baseline_return
+      response_window     — mean BUY-state duration in trading sessions (>= 2 cycles)
+
+    Transition logging: writes to signal_transitions only when action changes.
     """
     log = get_logger("signals.generator")
 
@@ -358,6 +426,82 @@ def generate_signal(
     expected_target = compute_expected_target(conn, ticker_b, optimal_lag)
     invalidation_threshold = compute_invalidation_threshold(conn, ticker_a)
 
+    # --- v1.1 outperformance signal fields ---
+
+    # rs_acceleration: pair RS slope (follower outpacing leader when positive)
+    rs_acceleration = compute_rs_slope(conn, ticker_a, ticker_b)
+
+    # leader_rs_deceleration: slope of leader's 1-session forward return over last 10 sessions
+    leader_rs_deceleration: float | None = None
+    lr_df = pd.read_sql_query(
+        """
+        SELECT return_value
+        FROM features_lagged_returns
+        WHERE ticker=? AND lag=1
+          AND return_value IS NOT NULL
+        ORDER BY trading_day DESC
+        LIMIT 10
+        """,
+        conn,
+        params=(ticker_a,),
+    )
+    if len(lr_df) >= 5:
+        lr_vals = lr_df['return_value'].iloc[::-1].values  # chronological order
+        leader_rs_deceleration = float(np.polyfit(np.arange(len(lr_vals)), lr_vals, 1)[0])
+
+    # outperformance_margin: expected_target minus leader baseline return
+    leader_baseline = compute_leader_baseline_return(conn, ticker_a, optimal_lag)
+    outperformance_margin: float | None = None
+    if expected_target is not None and leader_baseline is not None:
+        outperformance_margin = expected_target - leader_baseline
+
+    # response_window: mean BUY-state duration from historical transitions
+    response_window = compute_response_window(conn, ticker_a, ticker_b)
+
+    # BUY/HOLD/SELL classification from pair RS series (last 20 rows, chronological)
+    rs_df = pd.read_sql_query(
+        """
+        SELECT rs_value
+        FROM features_relative_strength
+        WHERE ticker_a=? AND ticker_b=?
+          AND rs_value IS NOT NULL
+        ORDER BY trading_day DESC
+        LIMIT 20
+        """,
+        conn,
+        params=(ticker_a, ticker_b),
+    )
+    if rs_df.empty:
+        new_action = 'HOLD'
+    else:
+        rs_series = rs_df['rs_value'].iloc[::-1].reset_index(drop=True)  # chronological
+        rs_std_val = float(rs_series.std()) if len(rs_series) > 1 else 0.0
+        rs_mean_val = float(rs_series.mean())
+        new_action = classify_action(rs_series, rs_std_val, rs_mean_val)
+
+    # Transition logging: write to signal_transitions only when action changes
+    existing_row = conn.execute(
+        "SELECT action FROM signals WHERE ticker_a=? AND ticker_b=? AND signal_date=?",
+        (ticker_a, ticker_b, signal_date),
+    ).fetchone()
+    existing_action = existing_row[0] if existing_row else None
+
+    if new_action != existing_action:
+        conn.execute(
+            """
+            INSERT INTO signal_transitions
+                (ticker_a, ticker_b, signal_date, from_action, to_action, transitioned_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                ticker_a, ticker_b, signal_date,
+                existing_action,
+                new_action,
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+        conn.commit()
+
     signal = {
         'ticker_a': ticker_a,
         'ticker_b': ticker_b,
@@ -375,12 +519,12 @@ def generate_signal(
         'flow_map_entry': flow_map_entry,
         'data_warning': data_warning,
         'generated_at': datetime.now(timezone.utc).isoformat(),
-        # Outperformance signal enhancement fields (v1.1) — populated by plan 07-02
-        'action': None,
-        'response_window': None,
-        'rs_acceleration': None,
-        'leader_rs_deceleration': None,
-        'outperformance_margin': None,
+        # Outperformance signal enhancement fields (v1.1)
+        'action': new_action,
+        'response_window': response_window,
+        'rs_acceleration': rs_acceleration,
+        'leader_rs_deceleration': leader_rs_deceleration,
+        'outperformance_margin': outperformance_margin,
     }
 
     from leadlag_engine.db import upsert_signal, upsert_flow_map
@@ -400,5 +544,6 @@ def generate_signal(
         sizing_tier=sizing_tier,
         direction=direction,
         flow_map_entry=flow_map_entry,
+        action=new_action,
     )
     return signal
