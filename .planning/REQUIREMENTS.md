@@ -76,10 +76,10 @@
 ### Gradio Application
 
 - [ ] **UI-01**: Signal Dashboard panel — displays active signals with full position spec; includes auto-execute toggle for paper trading
-- [ ] **UI-02**: Lead-Lag Charts panel — cross-correlation heatmap across lags, rolling optimal correlation over time for selected pair
-- [ ] **UI-03**: Regime State panel — current Bull/Base/Bear/Failure classification with all indicator values (RS, MA position, ATR, volume) that produced the classification
+- [x] **UI-02**: Lead-Lag Charts panel — cross-correlation heatmap across lags, rolling optimal correlation over time for selected pair
+- [x] **UI-03**: Regime State panel — current Bull/Base/Bear/Failure classification with all indicator values (RS, MA position, ATR, volume) that produced the classification
 - [ ] **UI-04**: Paper Trading panel — open positions table, total portfolio P&L, win rate, manual Buy/Sell inputs with ticker and quantity, closed trade history
-- [ ] **UI-05**: Backtest Results panel — hit rate, mean return, Sharpe, max drawdown for user-selected pair and date range
+- [x] **UI-05**: Backtest Results panel — hit rate, mean return, Sharpe, max drawdown for user-selected pair and date range
 - [ ] **UI-06**: User can add a new ticker pair (leader + follower) via text inputs in the app; system validates tickers against Polygon before saving
 
 ---
@@ -166,10 +166,10 @@
 | BACKTEST-02 | Phase 6 | Complete |
 | BACKTEST-03 | Phase 6 | Complete |
 | UI-01 | Phase 5 | Pending |
-| UI-02 | Phase 6 | Pending |
-| UI-03 | Phase 6 | Pending |
+| UI-02 | Phase 6 | Complete |
+| UI-03 | Phase 6 | Complete |
 | UI-04 | Phase 5 | Pending |
-| UI-05 | Phase 6 | Pending |
+| UI-05 | Phase 6 | Complete |
 | UI-06 | Phase 1 | Pending |
 
 **Coverage:**

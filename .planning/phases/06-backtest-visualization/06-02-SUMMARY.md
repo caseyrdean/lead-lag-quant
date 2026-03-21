@@ -46,7 +46,7 @@ decisions:
 metrics:
   duration: "~5 minutes"
   completed_date: "2026-03-21"
-  tasks_completed: 2
+  tasks_completed: 3
   tasks_total: 3
   files_created: 8
   files_modified: 4
@@ -62,6 +62,7 @@ metrics:
 |------|------|--------|-----------|
 | 1 | Types, API client, five backtest components | 261a9e1 | types/index.ts, lib/api.ts, components/backtest/* (5 files) |
 | 2 | Three pages, routes, sidebar links | 2aa70d8 | pages/BacktestPage.tsx, LeadLagChartsPage.tsx, RegimeStatePage.tsx, App.tsx, Sidebar.tsx |
+| 3 | Human verification of all three visualization pages | — (checkpoint) | Visual confirmation: sidebar links, page load, placeholder states all verified |
 
 ## What Was Built
 
@@ -91,9 +92,14 @@ metrics:
 - `App.tsx` — three new `<Route>` elements: `/backtest`, `/lead-lag`, `/regime`
 - `Sidebar.tsx` — three new links: Backtest (FlaskConical), Lead-Lag Charts (TrendingUp), Regime State (Gauge)
 
-## Awaiting
+## Human Verification
 
-Task 3 is a `checkpoint:human-verify` — human verification of the three pages in the running app.
+**Task 3:** Human verified all three pages in the running app. Approved 2026-03-21.
+- Sidebar shows "Backtest", "Lead-Lag Charts", and "Regime State" links.
+- BacktestPage renders with pair selector, date inputs, Run Backtest button, and placeholder stat cards.
+- LeadLagChartsPage renders with pair selectors and appropriate placeholder states.
+- RegimeStatePage renders with pair selectors and appropriate placeholder states.
+- No console errors observed.
 
 ## Deviations from Plan
 
@@ -135,3 +141,5 @@ Files verified:
 Commits verified:
 - `261a9e1` — Task 1: types, api client, five components
 - `2aa70d8` — Task 2: three pages, routes, sidebar
+
+Task 3 verification: human-approved (checkpoint gate, no commit required).
