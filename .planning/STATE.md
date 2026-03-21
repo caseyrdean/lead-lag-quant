@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 5.1 of 6 (API Security & Data Integrity Fixes)
-Plan: 3 of 4 -- Plan 05.1-03 complete
-Status: In Progress
-Last activity: 2026-03-21 -- Completed Plan 05.1-03 (BUGFIX-08: replace loop.create_task with asyncio.run_coroutine_threadsafe in broadcast_sync, 2 new tests)
+Plan: 4 of 4 -- Plan 05.1-04 complete (PHASE COMPLETE)
+Status: Complete
+Last activity: 2026-03-21 -- Completed Plan 05.1-04 (BUGFIX-09: delete Gradio ui/, repurpose main.py for uvicorn, remove gradio dep)
 
-Progress: [####################] 90%
+Progress: [####################] 93%
 
 ## Performance Metrics
 
@@ -101,6 +101,9 @@ Recent decisions affecting current work:
 - [05.1-02]: threading.Lock wraps entire auto_execute_signals body (blocking=True) — second caller waits, never silently skips
 - [05.1-02]: Gradio UI (ui/) intentionally not modified in 05.1-02 through 05.1-03 — being deleted in Plan 05.1-04
 - [05.1-03]: asyncio.run_coroutine_threadsafe replaces loop.create_task in broadcast_sync() — thread-safe cross-thread coroutine scheduling; Future return value discarded (fire-and-forget)
+- [05.1-04]: httpx added to dev dependencies — was a transitive dep of gradio; starlette TestClient requires it explicitly after gradio removal
+- [05.1-04]: reload=False in uvicorn.run — background threads (PipelineScheduler, BackgroundPricePoller) not compatible with uvicorn reload mode
+- [05.1-04]: main.py is now a thin uvicorn launcher — all app logic lives in api/main.py; Gradio ui/ fully deleted
 
 ### Pending Todos
 
@@ -114,5 +117,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-21
-Stopped at: Completed 05.1-03-PLAN.md (BUGFIX-08: thread-safe WebSocket broadcast via run_coroutine_threadsafe, 2 tests). Phase 5.1 plan 3/4 complete.
-Resume file: .planning/phases/05.1-api-security-data-integrity-fixes/05.1-03-SUMMARY.md
+Stopped at: Completed 05.1-04-PLAN.md (BUGFIX-09: Gradio ui/ deleted, main.py repurposed as uvicorn launcher, gradio removed). Phase 5.1 COMPLETE (4/4 plans).
+Resume file: .planning/phases/05.1-api-security-data-integrity-fixes/05.1-04-SUMMARY.md

@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Feature Engineering** - Rolling features, SPY residualization, cross-correlation, relative strength
 - [ ] **Phase 4: Lead-Lag Engine, Regime & Signals** - Stability scoring, regime classification, signal generation with full position specs
 - [ ] **Phase 5: Paper Trading Simulation** - Simulated trade execution, position tracking, P&L, signal dashboard and trading panels
-- [ ] **Phase 5.1: API Security & Data Integrity Fixes** (INSERTED) - Free-tier enforcement in FastAPI, missing DB commits, soft-delete signal filtering, concurrent execution guard, input validation, error handling
+- [x] **Phase 5.1: API Security & Data Integrity Fixes** (INSERTED) - Free-tier enforcement in FastAPI, missing DB commits, soft-delete signal filtering, concurrent execution guard, input validation, error handling
 - [ ] **Phase 6: Backtest & Visualization** - Stored-data backtesting, lead-lag charts, regime state panel, backtest results panel
 
 ## Phase Details
@@ -123,7 +123,7 @@ Plans:
 - [x] 05.1-01-PLAN.md -- Free-tier limit (BUGFIX-01), commit verify (BUGFIX-02), input validation (BUGFIX-06), analytics error handling (BUGFIX-07)
 - [x] 05.1-02-PLAN.md -- Soft-delete signal filtering in FastAPI/shared layer (BUGFIX-03), reactivated_at schema + API reactivation guard (BUGFIX-04), concurrent execution mutex (BUGFIX-05)
 - [x] 05.1-03-PLAN.md -- WebSocket broadcast reliability via run_coroutine_threadsafe (BUGFIX-08)
-- [ ] 05.1-04-PLAN.md -- Remove Gradio UI (delete ui/, remove gradio dep, repurpose main.py to launch FastAPI via uvicorn)
+- [x] 05.1-04-PLAN.md -- Remove Gradio UI (delete ui/, remove gradio dep, repurpose main.py to launch FastAPI via uvicorn)
 
 ### Phase 6: Backtest & Visualization
 **Goal**: Users can validate historical signal quality through stored-data backtesting and explore lead-lag relationships, regime state, and backtest results through dedicated visualization panels
@@ -152,5 +152,5 @@ Phases execute in numeric order: 1 --> 2 --> 3 --> 4 --> 5 --> 6
 | 3. Feature Engineering | 2/2 | Complete | 2026-02-18 |
 | 4. Lead-Lag Engine, Regime & Signals | 2/2 | Complete | 2026-02-18 |
 | 5. Paper Trading Simulation | 2/2 | Complete | 2026-02-19 |
-| 5.1. API Security & Data Integrity Fixes | 3/4 | In Progress|  |
+| 5.1. API Security & Data Integrity Fixes | 4/4 | Complete | 2026-03-21 |
 | 6. Backtest & Visualization | 0/2 | Not started | - |
