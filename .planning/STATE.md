@@ -10,10 +10,10 @@ See: .planning/PROJECT.md (updated 2026-03-21 after v1.0 milestone)
 ## Current Position
 
 Phase: 07-outperformance-signal-enhancement
-Status: In progress — plan 01 complete
-Last activity: 2026-03-21 — 07-01 schema migration complete; 5 new signals columns + signal_transitions table
+Status: In progress — plan 03 complete
+Last activity: 2026-03-21 — 07-03 scheduler poll interval reduced to 15 min; run_backtest() per-action by_action breakdown added
 
-Progress: [####################] In v1.1 (1/4 plans complete)
+Progress: [####################] In v1.1 (3/4 plans complete)
 
 ## Performance Metrics
 
@@ -48,6 +48,11 @@ All decisions logged in PROJECT.md Key Decisions table.
 - signal_transitions table uses separate executescript block for clean migration ordering
 - generator.py signal dict gets None defaults for new fields now; plan 07-02 will populate real values
 
+**07-03 (2026-03-21):**
+- by_action is additive — all existing flat aggregate keys in run_backtest() unchanged for backward compatibility
+- outperformance_vs_leader falls back to 0.0 (not None) when no leader return data available for a group
+- Leader return uses same (leader, signal_date, optimal_lag) key as follower — consistent with BACKTEST-01 (SQLite-only)
+
 ### Pending Todos
 
 None.
@@ -59,5 +64,5 @@ None — v1.0 complete at 48/48 requirements.
 ## Session Continuity
 
 Last session: 2026-03-21
-Stopped at: Completed 07-01-PLAN.md — schema migration done; ready for 07-02 (signal classifier).
+Stopped at: Completed 07-03-PLAN.md — scheduler poll interval + per-action backtest breakdown done; ready for 07-04 (tests).
 Resume file: none
