@@ -134,11 +134,11 @@ Plans:
   2. Backtest produces hit rate, mean return per trade, annualized Sharpe ratio, and maximum drawdown for a user-selected pair and date range, displayed in the Backtest Results panel (UI-05)
   3. Lead-Lag Charts panel (UI-02) displays cross-correlation heatmap across lags and rolling optimal correlation over time for a selected pair
   4. Regime State panel (UI-03) shows current Bull/Base/Bear/Failure classification with all indicator values (RS, MA position, ATR, volume) that produced the classification
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 06-01: Backtest module (SQLite-only reads, look-ahead bias prevention, performance metrics)
-- [ ] 06-02: Lead-Lag Charts panel (UI-02), Regime State panel (UI-03), and Backtest Results panel (UI-05)
+- [ ] 06-01-PLAN.md -- Backtest engine (backtest/engine.py), FastAPI routes (/api/backtest/run|xcorr|regime), and tests (BACKTEST-01, BACKTEST-02, BACKTEST-03)
+- [ ] 06-02-PLAN.md -- React pages: BacktestPage (UI-05), LeadLagChartsPage (UI-02), RegimeStatePage (UI-03), five components, three routes, sidebar links
 
 ## Progress
 
