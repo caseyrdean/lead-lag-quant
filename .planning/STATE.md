@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 5.1 of 6 (API Security & Data Integrity Fixes)
-Plan: 1 of 4 -- Plan 05.1-01 complete
+Plan: 2 of 4 -- Plan 05.1-02 complete
 Status: In Progress
-Last activity: 2026-03-21 -- Completed Plan 05.1-01 (FREE-tier enforcement, input validation, analytics error handling, 11 regression tests)
+Last activity: 2026-03-21 -- Completed Plan 05.1-02 (signal is_active JOIN, reactivated_at schema+guard+timestamp, threading.Lock, 3 regression tests)
 
 Progress: [####################] 90%
 
@@ -96,6 +96,10 @@ Recent decisions affecting current work:
 - [05.1-01]: Used app.dependency_overrides instead of app.state mutation for TestClient fixture — TestClient lifespan overwrites app.state after fixture sets it
 - [05.1-01]: BUGFIX-02 confirmed already present — conn.commit() was in delete_pairs() before this plan
 - [05.1-01]: price: float | None = Field(default=None, gt=0) preserves None=fetch-from-Polygon path while rejecting price<=0
+- [05.1-02]: INNER JOIN ticker_pairs WHERE is_active=1 is the standard pattern for signal queries — never query signals table without this join
+- [05.1-02]: reactivated_at column added to CREATE TABLE (fresh DBs) and ALTER TABLE with OperationalError guard (existing DBs) for dual-path idempotent migration
+- [05.1-02]: threading.Lock wraps entire auto_execute_signals body (blocking=True) — second caller waits, never silently skips
+- [05.1-02]: Gradio UI (ui/) intentionally not modified in 05.1-02 through 05.1-03 — being deleted in Plan 05.1-04
 
 ### Pending Todos
 
@@ -109,5 +113,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-21
-Stopped at: Completed 05.1-01-PLAN.md (API bugs: FREE-tier limit, input validation, analytics error handling). Phase 5.1 plan 1/4 complete.
-Resume file: .planning/phases/05.1-api-security-data-integrity-fixes/05.1-01-SUMMARY.md
+Stopped at: Completed 05.1-02-PLAN.md (data integrity: is_active JOIN, reactivated_at, threading.Lock, regression tests). Phase 5.1 plan 2/4 complete.
+Resume file: .planning/phases/05.1-api-security-data-integrity-fixes/05.1-02-SUMMARY.md
