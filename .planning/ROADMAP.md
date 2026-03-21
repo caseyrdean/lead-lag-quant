@@ -115,14 +115,14 @@ Plans:
   6. POST /api/trading/buy and /api/trading/sell reject shares <= 0 and price <= 0 with a 422 validation error
   7. All analytics endpoints (stats, risk, equity) return a structured JSON error response instead of a raw 500 traceback when an exception occurs
   8. broadcast_sync() delivers WebSocket messages reliably from background threads using run_coroutine_threadsafe instead of create_task
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 **Architecture decision:** The FastAPI backend (api/) + React/Vite frontend (frontend/) is the production stack. The Gradio UI (ui/) is being removed in Plan 05.1-04. Plans 05.1-01 through 05.1-03 fix only FastAPI and shared data-layer code — no Gradio files are touched.
 
 Plans:
 - [x] 05.1-01-PLAN.md -- Free-tier limit (BUGFIX-01), commit verify (BUGFIX-02), input validation (BUGFIX-06), analytics error handling (BUGFIX-07)
-- [ ] 05.1-02-PLAN.md -- Soft-delete signal filtering in FastAPI/shared layer (BUGFIX-03), reactivated_at schema + API reactivation guard (BUGFIX-04), concurrent execution mutex (BUGFIX-05)
-- [ ] 05.1-03-PLAN.md -- WebSocket broadcast reliability via run_coroutine_threadsafe (BUGFIX-08)
+- [x] 05.1-02-PLAN.md -- Soft-delete signal filtering in FastAPI/shared layer (BUGFIX-03), reactivated_at schema + API reactivation guard (BUGFIX-04), concurrent execution mutex (BUGFIX-05)
+- [x] 05.1-03-PLAN.md -- WebSocket broadcast reliability via run_coroutine_threadsafe (BUGFIX-08)
 - [ ] 05.1-04-PLAN.md -- Remove Gradio UI (delete ui/, remove gradio dep, repurpose main.py to launch FastAPI via uvicorn)
 
 ### Phase 6: Backtest & Visualization
@@ -152,5 +152,5 @@ Phases execute in numeric order: 1 --> 2 --> 3 --> 4 --> 5 --> 6
 | 3. Feature Engineering | 2/2 | Complete | 2026-02-18 |
 | 4. Lead-Lag Engine, Regime & Signals | 2/2 | Complete | 2026-02-18 |
 | 5. Paper Trading Simulation | 2/2 | Complete | 2026-02-19 |
-| 5.1. API Security & Data Integrity Fixes | 2/4 | In Progress|  |
+| 5.1. API Security & Data Integrity Fixes | 3/4 | In Progress|  |
 | 6. Backtest & Visualization | 0/2 | Not started | - |

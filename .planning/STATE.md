@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 5.1 of 6 (API Security & Data Integrity Fixes)
-Plan: 2 of 4 -- Plan 05.1-02 complete
+Plan: 3 of 4 -- Plan 05.1-03 complete
 Status: In Progress
-Last activity: 2026-03-21 -- Completed Plan 05.1-02 (signal is_active JOIN, reactivated_at schema+guard+timestamp, threading.Lock, 3 regression tests)
+Last activity: 2026-03-21 -- Completed Plan 05.1-03 (BUGFIX-08: replace loop.create_task with asyncio.run_coroutine_threadsafe in broadcast_sync, 2 new tests)
 
 Progress: [####################] 90%
 
@@ -100,6 +100,7 @@ Recent decisions affecting current work:
 - [05.1-02]: reactivated_at column added to CREATE TABLE (fresh DBs) and ALTER TABLE with OperationalError guard (existing DBs) for dual-path idempotent migration
 - [05.1-02]: threading.Lock wraps entire auto_execute_signals body (blocking=True) — second caller waits, never silently skips
 - [05.1-02]: Gradio UI (ui/) intentionally not modified in 05.1-02 through 05.1-03 — being deleted in Plan 05.1-04
+- [05.1-03]: asyncio.run_coroutine_threadsafe replaces loop.create_task in broadcast_sync() — thread-safe cross-thread coroutine scheduling; Future return value discarded (fire-and-forget)
 
 ### Pending Todos
 
@@ -113,5 +114,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-21
-Stopped at: Completed 05.1-02-PLAN.md (data integrity: is_active JOIN, reactivated_at, threading.Lock, regression tests). Phase 5.1 plan 2/4 complete.
-Resume file: .planning/phases/05.1-api-security-data-integrity-fixes/05.1-02-SUMMARY.md
+Stopped at: Completed 05.1-03-PLAN.md (BUGFIX-08: thread-safe WebSocket broadcast via run_coroutine_threadsafe, 2 tests). Phase 5.1 plan 3/4 complete.
+Resume file: .planning/phases/05.1-api-security-data-integrity-fixes/05.1-03-SUMMARY.md
