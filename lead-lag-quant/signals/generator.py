@@ -4,18 +4,18 @@ STATISTICAL THRESHOLDS:
 
   Correlation (|r|):
     ≥ 0.30 → weak but potentially usable
-    ≥ 0.50 → moderate, generally acceptable   (gate minimum)
+    ≥ 0.65 → strong — gate minimum
     ≥ 0.70 → strong, ideal
 
   Stability score (0-100):
     ≥ 40 → weak but potentially usable
-    ≥ 50 → moderate, generally acceptable     (gate minimum)
-    ≥ 60 → strong, ideal
+    ≥ 70 → strong — gate minimum
+    ≥ 85 → strong, ideal
 
-SIZING TIERS (SIGNAL-01) -- both dimensions must qualify:
-  'full':    stability ≥ 60 AND |corr| ≥ 0.70  (both strong)
-  'half':    stability ≥ 50 AND |corr| ≥ 0.50  (passes gate — moderate or better)
-  'quarter': reserved for future use (unreachable at current gate level)
+SIZING TIERS (SIGNAL-01) -- stability_score only:
+  'full':    stability_score > 85  (high confidence)
+  'half':    stability_score > 70  (passes gate — moderate to strong)
+  'quarter': stability_score <= 70 (at gate boundary — kept for completeness)
 
 DIRECTION (from correlation sign):
   correlation_strength > 0  -> 'long'  (follower moves same direction as leader)
@@ -40,14 +40,12 @@ from datetime import datetime, timezone
 import pandas as pd
 from utils.logging import get_logger
 
-STABILITY_THRESHOLD: float = 50.0      # gate minimum: moderate, generally acceptable
-CORRELATION_THRESHOLD: float = 0.50    # gate minimum: moderate, generally acceptable
+STABILITY_THRESHOLD: float = 70.0      # ENGINE-03 hard gate minimum (was 50.0)
+CORRELATION_THRESHOLD: float = 0.65   # ENGINE-03 hard gate minimum (was 0.50)
 
-# Sizing tier thresholds (both dimensions must qualify)
-_STABILITY_STRONG: float = 60.0        # strong — qualifies for 'full'
-_STABILITY_MODERATE: float = 50.0      # moderate — qualifies for 'half'
-_CORRELATION_STRONG: float = 0.70      # strong — qualifies for 'full'
-_CORRELATION_MODERATE: float = 0.50    # moderate — qualifies for 'half'
+# Sizing tier thresholds (stability_score only)
+_SIZING_FULL_THRESHOLD: float = 85.0    # stability > 85 -> 'full'
+_SIZING_HALF_THRESHOLD: float = 70.0    # stability > 70 -> 'half' (at gate level)
 _EXPECTED_TARGET_LOOKBACK = 120  # days of lagged_returns history for mean return
 _INVALIDATION_LOOKBACK = 60      # days of leader returns for mean |1d return|
 _INVALIDATION_MULTIPLIER = 2.0   # invalidation = 2x mean absolute 1d return
@@ -56,27 +54,26 @@ _INVALIDATION_MULTIPLIER = 2.0   # invalidation = 2x mean absolute 1d return
 def passes_gate(stability_score: float, correlation_strength: float) -> bool:
     """ENGINE-03 hard gate. Both conditions must be satisfied.
 
-    stability_score >= 40 AND abs(correlation_strength) >= 0.30
+    stability_score > 70 AND abs(correlation_strength) > 0.65
 
     The absolute value is used for correlation so that both long (positive) and
     short (negative) signals pass the strength requirement. Direction is
     determined separately by the sign.
     """
-    return stability_score >= STABILITY_THRESHOLD and abs(correlation_strength) >= CORRELATION_THRESHOLD
+    return stability_score > STABILITY_THRESHOLD and abs(correlation_strength) > CORRELATION_THRESHOLD
 
 
-def determine_sizing_tier(stability_score: float, correlation_strength: float) -> str:
-    """Map stability + correlation to sizing tier.
+def determine_sizing_tier(stability_score: float) -> str:
+    """Map stability score to sizing tier (SIGNAL-01).
 
-    Both dimensions must qualify for the tier:
-      'full':    stability >= 60 AND |corr| >= 0.70  (both strong)
-      'half':    stability >= 50 AND |corr| >= 0.50  (both moderate or better)
-      'quarter': passes gate but below moderate on at least one dimension
+    Tier breakpoints (strict >):
+      'full':    stability_score > 85   (high confidence)
+      'half':    stability_score > 70   (passes gate — moderate to strong)
+      'quarter': stability_score <= 70  (at gate boundary — kept for completeness)
     """
-    corr_abs = abs(correlation_strength)
-    if stability_score >= _STABILITY_STRONG and corr_abs >= _CORRELATION_STRONG:
+    if stability_score > _SIZING_FULL_THRESHOLD:
         return 'full'
-    if stability_score >= _STABILITY_MODERATE and corr_abs >= _CORRELATION_MODERATE:
+    if stability_score > _SIZING_HALF_THRESHOLD:
         return 'half'
     return 'quarter'
 
@@ -208,7 +205,7 @@ def generate_signal(
         return None
 
     direction = 'long' if correlation_strength > 0 else 'short'
-    sizing_tier = determine_sizing_tier(stability_score, correlation_strength)
+    sizing_tier = determine_sizing_tier(stability_score)
     flow_map_entry = build_flow_map_entry(ticker_a, ticker_b, optimal_lag)
     expected_target = compute_expected_target(conn, ticker_b, optimal_lag)
     invalidation_threshold = compute_invalidation_threshold(conn, ticker_a)
