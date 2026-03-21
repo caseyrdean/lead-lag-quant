@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 ## Current Position
 
-Phase: 6 of 6 (Backtest & Visualization)
-Plan: 3 of 5 -- Plan 06-02 complete; starting 06-03
-Status: In Progress
-Last activity: 2026-03-21 -- Plan 06-02 complete: 3 React pages (Backtest, Lead-Lag Charts, Regime State), 5 components, 3 routes, 3 sidebar links; human verified
+Phase: 6.1 of 6.1 (Signal Gate Threshold Fix)
+Plan: 1 of 1 -- Plan 06.1-01 complete; all phases done
+Status: Complete
+Last activity: 2026-03-21 -- Plan 06.1-01 complete: ENGINE-03 gap closure, STABILITY_THRESHOLD=70.0, CORRELATION_THRESHOLD=0.65, passes_gate strict >, determine_sizing_tier stability-only; 48/48 v1.0 requirements satisfied, 23/23 tests passing
 
 Progress: [####################] 100%
 
