@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Feature Engineering** - Rolling features, SPY residualization, cross-correlation, relative strength
 - [ ] **Phase 4: Lead-Lag Engine, Regime & Signals** - Stability scoring, regime classification, signal generation with full position specs
 - [ ] **Phase 5: Paper Trading Simulation** - Simulated trade execution, position tracking, P&L, signal dashboard and trading panels
+- [ ] **Phase 5.1: API Security & Data Integrity Fixes** (INSERTED) - Free-tier enforcement in FastAPI, missing DB commits, soft-delete signal filtering, concurrent execution guard, input validation, error handling
 - [ ] **Phase 6: Backtest & Visualization** - Stored-data backtesting, lead-lag charts, regime state panel, backtest results panel
 
 ## Phase Details
@@ -101,6 +102,26 @@ Plans:
 - [x] 05-01-PLAN.md -- Paper trading engine: SQLite schema (3 tables), trading engine (set capital, open/close positions, auto-execute), Polygon price poller with market hours guard, tests
 - [x] 05-02-PLAN.md -- Signal Dashboard tab (UI-01) and Paper Trading tab (UI-04) integrated into existing Gradio app with gr.Timer price refresh
 
+### Phase 5.1: API Security & Data Integrity Fixes (INSERTED)
+**Goal**: All critical and high-priority bugs from the API/frontend code review are fixed — free-tier pair limits enforced in FastAPI, database writes are committed atomically, soft-deleted pairs are filtered from signals, concurrent trade execution is serialized, and API inputs are validated with proper error responses
+**Depends on**: Phase 5
+**Requirements**: BUGFIX-01, BUGFIX-02, BUGFIX-03, BUGFIX-04, BUGFIX-05, BUGFIX-06, BUGFIX-07, BUGFIX-08
+**Success Criteria** (what must be TRUE):
+  1. A FREE-tier user cannot exceed 5 active pairs via the FastAPI endpoint — the limit is enforced server-side in api/routes/pairs.py, not only in the Gradio UI
+  2. Pair soft-delete via the FastAPI DELETE endpoint commits to SQLite — pairs removed via API are visible as inactive immediately on next read
+  3. Signals displayed in the Signal Dashboard and returned by the API never include signals for soft-deleted (is_active=0) pairs
+  4. Signals from a deactivation period are not auto-executed when a pair is reactivated — only signals generated after reactivation are eligible
+  5. Concurrent buy/sell operations cannot double-spend cash — signal execution uses a database-level exclusive lock or application-level mutex
+  6. POST /api/trading/buy and /api/trading/sell reject shares <= 0 and price <= 0 with a 422 validation error
+  7. All analytics endpoints (stats, risk, equity) return a structured JSON error response instead of a raw 500 traceback when an exception occurs
+  8. broadcast_sync() delivers WebSocket messages reliably from background threads using run_coroutine_threadsafe instead of create_task
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05.1-01-PLAN.md -- Free-tier limit (BUGFIX-01), commit verify (BUGFIX-02), input validation (BUGFIX-06), analytics error handling (BUGFIX-07)
+- [ ] 05.1-02-PLAN.md -- Soft-delete signal filtering (BUGFIX-03), reactivated_at schema + reactivation guard (BUGFIX-04), concurrent execution mutex (BUGFIX-05)
+- [ ] 05.1-03-PLAN.md -- WebSocket broadcast reliability via run_coroutine_threadsafe (BUGFIX-08)
+
 ### Phase 6: Backtest & Visualization
 **Goal**: Users can validate historical signal quality through stored-data backtesting and explore lead-lag relationships, regime state, and backtest results through dedicated visualization panels
 **Depends on**: Phase 4 (backtest needs signals and features; visualization needs all upstream data)
@@ -128,4 +149,5 @@ Phases execute in numeric order: 1 --> 2 --> 3 --> 4 --> 5 --> 6
 | 3. Feature Engineering | 2/2 | Complete | 2026-02-18 |
 | 4. Lead-Lag Engine, Regime & Signals | 2/2 | Complete | 2026-02-18 |
 | 5. Paper Trading Simulation | 2/2 | Complete | 2026-02-19 |
+| 5.1. API Security & Data Integrity Fixes | 0/3 | Not started | - |
 | 6. Backtest & Visualization | 0/2 | Not started | - |
