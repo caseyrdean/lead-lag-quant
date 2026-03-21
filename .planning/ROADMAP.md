@@ -134,10 +134,10 @@ Plans:
   1. `signals/generator.py` has `STABILITY_THRESHOLD = 70.0` and `CORRELATION_THRESHOLD = 0.65`
   2. `test_signals_generator.py` passes with no failures (12 pre-existing failures resolved)
   3. No regression in other passing tests
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] 06.1-01-PLAN.md -- Fix STABILITY_THRESHOLD/CORRELATION_THRESHOLD in signals/generator.py, fix test_signals_generator.py
+- [ ] 06.1-01-PLAN.md -- Fix STABILITY_THRESHOLD/CORRELATION_THRESHOLD constants, fix passes_gate operator, fix determine_sizing_tier to stability-only signature in signals/generator.py
 
 ### Phase 6: Backtest & Visualization
 **Goal**: Users can validate historical signal quality through stored-data backtesting and explore lead-lag relationships, regime state, and backtest results through dedicated visualization panels
