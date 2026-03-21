@@ -48,6 +48,12 @@ All decisions logged in PROJECT.md Key Decisions table.
 - signal_transitions table uses separate executescript block for clean migration ordering
 - generator.py signal dict gets None defaults for new fields now; plan 07-02 will populate real values
 
+**07-02 (2026-03-21):**
+- SELL checked before BUY condition 1 — positive-but-declining RS is a warning signal, not a buy
+- classify_action is a pure function (no DB calls) — takes pre-computed rs_series, rs_std, rs_mean
+- leader_rs_deceleration computed inline in generate_signal (lag=1 forward return slope over 10 sessions)
+- Transition logging: write to signal_transitions only on action state change (no HOLD->HOLD spam)
+
 **07-03 (2026-03-21):**
 - by_action is additive — all existing flat aggregate keys in run_backtest() unchanged for backward compatibility
 - outperformance_vs_leader falls back to 0.0 (not None) when no leader return data available for a group
