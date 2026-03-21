@@ -69,9 +69,9 @@
 
 ### Backtest
 
-- [ ] **BACKTEST-01**: Backtest module reads from SQLite stored data only — never calls Polygon API
-- [ ] **BACKTEST-02**: Backtest adjustment path filters split records to `fetched_at <= backtest_date` (no look-ahead bias)
-- [ ] **BACKTEST-03**: Backtest reports: hit rate, mean return per trade, annualized Sharpe ratio, maximum drawdown
+- [x] **BACKTEST-01**: Backtest module reads from SQLite stored data only — never calls Polygon API
+- [x] **BACKTEST-02**: Backtest adjustment path filters split records to `fetched_at <= backtest_date` (no look-ahead bias)
+- [x] **BACKTEST-03**: Backtest reports: hit rate, mean return per trade, annualized Sharpe ratio, maximum drawdown
 
 ### Gradio Application
 
@@ -162,9 +162,9 @@
 | TRADE-06 | Phase 5 | Pending |
 | TRADE-07 | Phase 5 | Pending |
 | TRADE-08 | Phase 5 | Pending |
-| BACKTEST-01 | Phase 6 | Pending |
-| BACKTEST-02 | Phase 6 | Pending |
-| BACKTEST-03 | Phase 6 | Pending |
+| BACKTEST-01 | Phase 6 | Complete |
+| BACKTEST-02 | Phase 6 | Complete |
+| BACKTEST-03 | Phase 6 | Complete |
 | UI-01 | Phase 5 | Pending |
 | UI-02 | Phase 6 | Pending |
 | UI-03 | Phase 6 | Pending |

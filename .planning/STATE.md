@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 ## Current Position
 
-Phase: 5.1 of 6 (API Security & Data Integrity Fixes)
-Plan: 4 of 4 -- Plan 05.1-04 complete (PHASE COMPLETE)
-Status: Complete
-Last activity: 2026-03-21 -- Completed Plan 05.1-04 (BUGFIX-09: delete Gradio ui/, repurpose main.py for uvicorn, remove gradio dep)
+Phase: 6 of 6 (Backtest & Visualization)
+Plan: 1 of 5 -- Plan 06-01 complete
+Status: In Progress
+Last activity: 2026-03-21 -- Completed Plan 06-01 (BACKTEST-01/02/03: backtest engine, three FastAPI endpoints, 7 tests)
 
-Progress: [####################] 93%
+Progress: [####################] 95%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 15min
-- Total execution time: 2.5 hours
+- Total plans completed: 11
+- Average duration: 14min
+- Total execution time: ~2.5 hours
 
 **By Phase:**
 
@@ -104,6 +104,10 @@ Recent decisions affecting current work:
 - [05.1-04]: httpx added to dev dependencies — was a transitive dep of gradio; starlette TestClient requires it explicitly after gradio removal
 - [05.1-04]: reload=False in uvicorn.run — background threads (PipelineScheduler, BackgroundPricePoller) not compatible with uvicorn reload mode
 - [05.1-04]: main.py is now a thin uvicorn launcher — all app logic lives in api/main.py; Gradio ui/ fully deleted
+- [06-01]: features_lagged_returns used for return-at-lag lookup in backtest — avoids calendar vs. trading day arithmetic; consistent with signal generator
+- [06-01]: Signal date range filter (signal_date BETWEEN start AND end) is primary look-ahead bias control; stored returns already split-adjusted via Policy A
+- [06-01]: regime endpoint accepts leader param for API consistency but queries regime_states by follower (regime is follower-keyed)
+- [06-01]: max_drawdown returned as negative decimal using cumsum/cummax pattern from paper_trading/analytics.py
 
 ### Pending Todos
 
@@ -117,5 +121,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-21
-Stopped at: Completed 05.1-04-PLAN.md (BUGFIX-09: Gradio ui/ deleted, main.py repurposed as uvicorn launcher, gradio removed). Phase 5.1 COMPLETE (4/4 plans).
-Resume file: .planning/phases/05.1-api-security-data-integrity-fixes/05.1-04-SUMMARY.md
+Stopped at: Completed 06-01-PLAN.md (BACKTEST-01/02/03: backtest engine package + three FastAPI endpoints + 7 tests). Phase 6 plan 1/5 complete.
+Resume file: .planning/phases/06-backtest-visualization/06-01-SUMMARY.md

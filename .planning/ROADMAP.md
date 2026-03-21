@@ -137,7 +137,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md -- Backtest engine (backtest/engine.py), FastAPI routes (/api/backtest/run|xcorr|regime), and tests (BACKTEST-01, BACKTEST-02, BACKTEST-03)
+- [x] 06-01-PLAN.md -- Backtest engine (backtest/engine.py), FastAPI routes (/api/backtest/run|xcorr|regime), and tests (BACKTEST-01, BACKTEST-02, BACKTEST-03)
 - [ ] 06-02-PLAN.md -- React pages: BacktestPage (UI-05), LeadLagChartsPage (UI-02), RegimeStatePage (UI-03), five components, three routes, sidebar links
 
 ## Progress
@@ -153,4 +153,4 @@ Phases execute in numeric order: 1 --> 2 --> 3 --> 4 --> 5 --> 6
 | 4. Lead-Lag Engine, Regime & Signals | 2/2 | Complete | 2026-02-18 |
 | 5. Paper Trading Simulation | 2/2 | Complete | 2026-02-19 |
 | 5.1. API Security & Data Integrity Fixes | 4/4 | Complete | 2026-03-21 |
-| 6. Backtest & Visualization | 0/2 | Not started | - |
+| 6. Backtest & Visualization | 1/2 | In Progress | - |
