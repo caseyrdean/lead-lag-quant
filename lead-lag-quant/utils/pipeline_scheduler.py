@@ -1,7 +1,7 @@
 """Background pipeline scheduler: runs the full data pipeline once per trading day.
 
 Logic:
-  - Wakes every POLL_INTERVAL seconds (default 1800 = 30 min)
+  - Wakes every POLL_INTERVAL seconds (default 900 = 15 min)
   - On each wake, calls _should_run():
       * Skip weekends
       * Skip before 17:00 ET (Polygon EOD data not yet published)
@@ -25,7 +25,7 @@ from utils.logging import get_logger
 
 log = get_logger("pipeline_scheduler")
 
-POLL_INTERVAL = 1800       # 30 minutes between checks
+POLL_INTERVAL = 900        # 15 minutes between checks
 PIPELINE_HOUR_ET = 17      # Don't run before 5 PM ET
 
 
