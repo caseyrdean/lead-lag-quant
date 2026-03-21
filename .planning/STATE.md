@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 ## Current Position
 
-Phase: 6 of 6 (Backtesting and Analysis)
-Plan: 0 of ? -- Phase 5 complete
-Status: Ready
-Last activity: 2026-02-19 -- Completed Plan 05-02 (Signal Dashboard + Paper Trading UI, 5 tabs total, user-verified APPROVED)
+Phase: 5.1 of 6 (API Security & Data Integrity Fixes)
+Plan: 1 of 4 -- Plan 05.1-01 complete
+Status: In Progress
+Last activity: 2026-03-21 -- Completed Plan 05.1-01 (FREE-tier enforcement, input validation, analytics error handling, 11 regression tests)
 
 Progress: [####################] 90%
 
@@ -93,6 +93,9 @@ Recent decisions affecting current work:
 - [05-02]: gr.Timer(900) wired to refresh_prices_callback which calls poll_and_update_prices then returns updated positions DataFrame for 15-min live refresh
 - [05-02]: Shared conn (check_same_thread=False + WAL mode) passed by closure into tab builders -- safe for single-user local app
 - [05-02]: execute_signals_callback guards on auto_execute_enabled toggle before calling auto_execute_signals to prevent accidental execution
+- [05.1-01]: Used app.dependency_overrides instead of app.state mutation for TestClient fixture — TestClient lifespan overwrites app.state after fixture sets it
+- [05.1-01]: BUGFIX-02 confirmed already present — conn.commit() was in delete_pairs() before this plan
+- [05.1-01]: price: float | None = Field(default=None, gt=0) preserves None=fetch-from-Polygon path while rejecting price<=0
 
 ### Pending Todos
 
@@ -105,6 +108,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Stopped at: Completed 05-02-PLAN.md (Signal Dashboard + Paper Trading UI, user-verified). Phase 5 complete. Ready for Phase 6 (Backtesting and Analysis).
-Resume file: .planning/phases/05-paper-trading-simulation/05-02-SUMMARY.md
+Last session: 2026-03-21
+Stopped at: Completed 05.1-01-PLAN.md (API bugs: FREE-tier limit, input validation, analytics error handling). Phase 5.1 plan 1/4 complete.
+Resume file: .planning/phases/05.1-api-security-data-integrity-fixes/05.1-01-SUMMARY.md
